@@ -7,6 +7,7 @@ Robotics world models and language-model research. This portfolio documents rese
 | Project | What is here | Evidence status |
 |---|---|---|
 | [V7 and V7-F robot dynamics](ugp/v7-v7f/README.md) | Research notebook, aggregate force results, plotted comparison | Saved RTX training and evaluation artifacts; familiar and strict-unseen tests are separate |
+| [V8 contact-map experiments](ugp/v8-contact-map/README.md) | Standalone notebook and aggregate A–D/F exports | Offline modules with limited diagnostics; E/F remained shadow/replay |
 | [FeelWM and TartanGround](ugp/feelwm-tartanground/README.md) | Five-stream world-model source, data interface, four pilot result files | Executed capped pilots; final ten-epoch strict comparison unavailable |
 | [V7 SHORT foothold memory](ugp/foothold-memory/README.md) | Research notebook and four-environment summary | Trained model and restricted scored-window evaluation; incomplete event and leg coverage |
 | [3D Terrain–Foothold World Model](ugp/terrain-foothold-world-model/README.md) | Architecture and pilot/validation record | Separate project; no independent test or completed 20-epoch run established |

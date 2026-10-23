@@ -11,6 +11,8 @@
 | Independent terrain model | Epoch-3 case metrics and project status report | Validation/model-selection cases; not untouched test |
 | CS781 Phase 1 | `CS781_ARCHIVE_INVENTORY_20261006.md` and named ZIP manifests | Historical screenshot scores; private leaderboard not freshly retrieved |
 | CS781 Assignment 3 | Saved official grader evidence and run package | 258/258 checks; no convergence/grade inference |
+| CS781 Assignment 1 | `CS781-A1-Krishna-Karthikeya-250564_UPDATED_FINAL.ipynb` | Saved execution state only; no grade claim |
+| V8 A–F | Saved aggregate RTX CSV exports and earlier Colab notebook | Different tasks; E/F offline shadow/replay, no closed-loop proof |
 
 `PROVENANCE.json` records the original artifact basename and SHA-256 for each copied file. Notebook entries also record the transform applied. Original source files are not silently edited. The repository's generated plot derives only from the two published aggregate CSVs.
 
