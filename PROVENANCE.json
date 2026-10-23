@@ -1,0 +1,222 @@
+{
+  "snapshot_date": "2026-10-23",
+  "files": [
+    {
+      "published": "ugp/feelwm-tartanground/src/__init__.py",
+      "source_artifact": "__init__.py",
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/checkpointing.py",
+      "source_artifact": "checkpointing.py",
+      "source_sha256": "6561e8b89b59d714d696a25e059736b3d26af1982036f9c52383d292783da573",
+      "published_sha256": "6561e8b89b59d714d696a25e059736b3d26af1982036f9c52383d292783da573",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/config.py",
+      "source_artifact": "config.py",
+      "source_sha256": "95329d4990b20959718f084378e2f0d9bb4c29b2c6e32bfed8c2df1bc3733f29",
+      "published_sha256": "95329d4990b20959718f084378e2f0d9bb4c29b2c6e32bfed8c2df1bc3733f29",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/data.py",
+      "source_artifact": "data.py",
+      "source_sha256": "922cd4646888646310e2107513572ca55547bc51d7ad4208bd403bab20f12cd1",
+      "published_sha256": "922cd4646888646310e2107513572ca55547bc51d7ad4208bd403bab20f12cd1",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/losses.py",
+      "source_artifact": "losses.py",
+      "source_sha256": "66591a6a9c0ed07d2206c8c47173d2c20121f60358ee680a0fe323360a9399a5",
+      "published_sha256": "66591a6a9c0ed07d2206c8c47173d2c20121f60358ee680a0fe323360a9399a5",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/model.py",
+      "source_artifact": "model.py",
+      "source_sha256": "05cffa195c77873619c48e20d2d0a3e9a39fbbfb75999aff0d81bf4f1234e7cc",
+      "published_sha256": "05cffa195c77873619c48e20d2d0a3e9a39fbbfb75999aff0d81bf4f1234e7cc",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/smoke_test.py",
+      "source_artifact": "smoke_test.py",
+      "source_sha256": "a23a81e6d631f55513c3c415d1ffb83c4143e49416c76c2638bb73b65e3e8892",
+      "published_sha256": "a23a81e6d631f55513c3c415d1ffb83c4143e49416c76c2638bb73b65e3e8892",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/train.py",
+      "source_artifact": "train.py",
+      "source_sha256": "7d2ef89864767cf9fee3250131a78c7458885526ff1dec2cedee27706ad8280a",
+      "published_sha256": "7d2ef89864767cf9fee3250131a78c7458885526ff1dec2cedee27706ad8280a",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/requirements.txt",
+      "source_artifact": "requirements.txt",
+      "source_sha256": "e7e2f5f9a30a19b1fd83a90d20b2376271eb180a4357e76fc0360e13d692392b",
+      "published_sha256": "e7e2f5f9a30a19b1fd83a90d20b2376271eb180a4357e76fc0360e13d692392b",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/tartanground/__init__.py",
+      "source_artifact": "__init__.py",
+      "source_sha256": "4ecbd04b9c51d17d4b64bc745e8351c7283adcc86413316dca9f548541796ff4",
+      "published_sha256": "4ecbd04b9c51d17d4b64bc745e8351c7283adcc86413316dca9f548541796ff4",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/tartanground/evaluate.py",
+      "source_artifact": "evaluate.py",
+      "source_sha256": "e54a39e56dd302f949e3ebee31b799f663cd487154b3211d83ae8d765a713997",
+      "published_sha256": "e54a39e56dd302f949e3ebee31b799f663cd487154b3211d83ae8d765a713997",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/tartanground/indexed.py",
+      "source_artifact": "indexed.py",
+      "source_sha256": "001b083664ae74eb1b9a05dbf972231d64de098c43bbe03c41a1b1a3ba12e0c9",
+      "published_sha256": "001b083664ae74eb1b9a05dbf972231d64de098c43bbe03c41a1b1a3ba12e0c9",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/tartanground/pilot.py",
+      "source_artifact": "pilot.py",
+      "source_sha256": "866ecf12d8700cf7fa40518e3be96a0762eb0e74ff768fc3f305e392b82e1d43",
+      "published_sha256": "866ecf12d8700cf7fa40518e3be96a0762eb0e74ff768fc3f305e392b82e1d43",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/tartanground/rollout.py",
+      "source_artifact": "rollout.py",
+      "source_sha256": "534c67936c722ad91e969e1d6a458f70c09edbdfee4fa34d685ca6a90d19ce07",
+      "published_sha256": "534c67936c722ad91e969e1d6a458f70c09edbdfee4fa34d685ca6a90d19ce07",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/tartanground/windows.py",
+      "source_artifact": "windows.py",
+      "source_sha256": "f846518c69523bc87f87d13a2553bc803b73adba66c877fcc3ca6b0a7ca5eb3d",
+      "published_sha256": "f846518c69523bc87f87d13a2553bc803b73adba66c877fcc3ca6b0a7ca5eb3d",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/scripts/evaluate_strict.py",
+      "source_artifact": "evaluate_strict.py",
+      "source_sha256": "a8ce19a6f97d2bb1b2c0eabe60ff81537a03fe5964ece0326a443d3b07d02fb6",
+      "published_sha256": "a8ce19a6f97d2bb1b2c0eabe60ff81537a03fe5964ece0326a443d3b07d02fb6",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/scripts/make_dummy_data.py",
+      "source_artifact": "make_dummy_data.py",
+      "source_sha256": "04f17c6d322ed6571374d825ea6a414c6fe673b5c2832f2b6f363474a46b5b21",
+      "published_sha256": "04f17c6d322ed6571374d825ea6a414c6fe673b5c2832f2b6f363474a46b5b21",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/src/scripts/validate_manifest.py",
+      "source_artifact": "validate_manifest.py",
+      "source_sha256": "45c9c18383262f82b5a32883a074e9a84a14fe981900c5b87137519feec59e0d",
+      "published_sha256": "45c9c18383262f82b5a32883a074e9a84a14fe981900c5b87137519feec59e0d",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/v7-v7f/notebooks/v7_v7f_research_snapshot.ipynb",
+      "source_artifact": "V7F_2xRTX4080_EXPANDED_28TRAIN_4STRICT_HOLDOUT_CHECKPOINTED_FINAL.ipynb",
+      "source_sha256": "a8dfe1a289fd910cdd46f3fef4dfccb12fee5c27434e41d22a63c39ba35f87fe",
+      "published_sha256": "cfca3e4ffff4deb991a2eaa11a31012c2daf5c4535f8921e3f6ba6efc90d6577",
+      "transform": "outputs and execution state removed; local/RTX identifiers redacted"
+    },
+    {
+      "published": "ugp/foothold-memory/notebooks/v7_short_foothold_memory.ipynb",
+      "source_artifact": "V7F_2xRTX4080_EXPANDED_28TRAIN_4STRICT_HOLDOUT_SHORT_FOOTHOLD_MEMORY.ipynb",
+      "source_sha256": "f6a0085e399a2ef66a51bfedb1ca590c19f8b5c229d78c7cbfd9d0ec3da1ffc6",
+      "published_sha256": "c18073738ea457de3415193caf4d33537aa6346407c1152bec3acd1b0c3aff31",
+      "transform": "outputs and execution state removed; local/RTX identifiers redacted"
+    },
+    {
+      "published": "ugp/v7-v7f/figures/v7_architecture.png",
+      "source_artifact": "V7_RTX_Model_Architecture_20261011.png",
+      "source_sha256": "a15fd2503cd8a6369f15b20f07ea55d75917f4f4c39f2dd6b08cfaa668ae0266",
+      "published_sha256": "a15fd2503cd8a6369f15b20f07ea55d75917f4f4c39f2dd6b08cfaa668ae0266",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/v7-v7f/results/familiar_v7_vs_v7f.csv",
+      "source_artifact": "V7F_VS_V7_FORCE_BY_HORIZON.csv",
+      "source_sha256": "d67b8a17ff3efc32cfc51d22bcc517c04832a0f6efbc89d1338de7504772feea",
+      "published_sha256": "d67b8a17ff3efc32cfc51d22bcc517c04832a0f6efbc89d1338de7504772feea",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/v7-v7f/results/strict_unseen_v7f.csv",
+      "source_artifact": "UNSEEN_TRAJECTORY_OVERALL.csv",
+      "source_sha256": "c6ca3b2085a9215b0b11f030442975c58e65f121b5ee2010b59a5923e3532387",
+      "published_sha256": "c6ca3b2085a9215b0b11f030442975c58e65f121b5ee2010b59a5923e3532387",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/results/shared_k1_pilot.json",
+      "source_artifact": "strict_test_metrics.json",
+      "source_sha256": "30ec20e1752a9bc610ed74dc24fb56d1697145f718a8b96e404566433a6c8a54",
+      "published_sha256": "30ec20e1752a9bc610ed74dc24fb56d1697145f718a8b96e404566433a6c8a54",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/results/shared_k5_pilot.json",
+      "source_artifact": "strict_test_metrics.json",
+      "source_sha256": "b0058dcbec36cfc6fb62eb5a16d2205a05e7888b1688aa2bc6415d14258063c2",
+      "published_sha256": "b0058dcbec36cfc6fb62eb5a16d2205a05e7888b1688aa2bc6415d14258063c2",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/results/per_leg_k1_pilot.json",
+      "source_artifact": "strict_test_metrics.json",
+      "source_sha256": "2c65526bd45c0a10b3a73461dcdab9682ae0971624847e814c858c5b4b732fc4",
+      "published_sha256": "2c65526bd45c0a10b3a73461dcdab9682ae0971624847e814c858c5b4b732fc4",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/results/per_leg_k5_pilot.json",
+      "source_artifact": "strict_test_metrics.json",
+      "source_sha256": "b6f6e27c9a9f54cd7adcaf7ce97b8a4ec8cde9490260c2bd2e25310e7262e99f",
+      "published_sha256": "b6f6e27c9a9f54cd7adcaf7ce97b8a4ec8cde9490260c2bd2e25310e7262e99f",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/foothold-memory/results/strict_holdout_summary.csv",
+      "source_artifact": "STRICT_HOLDOUT_SUMMARY.csv",
+      "source_sha256": "329d1403e13f5934293359c3b91eabbc4e6af16f805ffa9a8d9c7228bec55b68",
+      "published_sha256": "329d1403e13f5934293359c3b91eabbc4e6af16f805ffa9a8d9c7228bec55b68",
+      "transform": "none"
+    },
+    {
+      "published": "ugp/v7-v7f/figures/force_results.png",
+      "source_artifact": "familiar_v7_vs_v7f.csv + strict_unseen_v7f.csv",
+      "source_sha256": "see CSV entries",
+      "published_sha256": "26bb09a78b3901cdeb00eae03ac118ac44bd1b0adba31321c6893646f8b8417f",
+      "transform": "plot generated from published aggregate CSVs"
+    },
+    {
+      "published": "ugp/feelwm-tartanground/figures/pilot_force_error.png",
+      "source_artifact": "four published pilot JSON files",
+      "source_sha256": "see JSON entries",
+      "published_sha256": "e124f3f57bcc25be70a191bae955bb7a2f8523430fec71ead1b91bec6f26e191",
+      "transform": "plot generated from published aggregate JSONs"
+    },
+    {
+      "published": "ugp/foothold-memory/figures/event_coverage.png",
+      "source_artifact": "saved event coverage audit (449 of 2,928)",
+      "source_sha256": "summary cited in EVIDENCE.md",
+      "published_sha256": "d41d25be9b522ec9c41e1a6ba3f3aa0d9dbdf8e7c0ee5b9a264fa7b45fe9e8a9",
+      "transform": "plot generated from audited unique-event counts"
+    }
+  ]
+}
