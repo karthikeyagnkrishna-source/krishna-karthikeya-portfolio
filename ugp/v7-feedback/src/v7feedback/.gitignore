@@ -1,0 +1,4 @@
+.verification_deps/
+__pycache__/
+*.pyc
+verification.json

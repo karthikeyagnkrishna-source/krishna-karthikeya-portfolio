@@ -1,0 +1,189 @@
+\section{Cross-Modal Learning and Uncertainty}
+\label{sec:learning}
+
+\subsection{Two inference times: before and after contact}
+
+The model has two deliberately different inference paths.
+
+\begin{enumerate}
+  \item \textbf{Before contact}, the robot has only registered appearance and geometry. A visual--geometric student predicts a broad contact prior $q_v(\eta_\xi,\ell_\xi\mid z_\xi,g_\xi)$.
+  \item \textbf{After contact}, force/proprioceptive history is available. A response encoder predicts $q_p(\eta_\xi,\ell_\xi\mid H^{p,f}_t)$, which acts as a physically grounded teacher and an online likelihood-like correction.
+\end{enumerate}
+
+This distinction prevents information leakage: an untouched patch must never be evaluated with a posterior inferred from future contact. During training, the post-contact teacher supplies the target that makes visual prediction physical. During deployment, only cells already contacted receive the response correction.
+
+\subsection{Representation and network architecture}
+
+\begin{figure}[ht]
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[node distance=7mm and 9mm]
+  \node[block,text width=30mm] (img) {Image crop / dense image feature at $\xi$};
+  \node[block,right=of img,text width=31mm] (vis) {Frozen DINOv2-S/14\\projection $384\!\to\!64$};
+  \node[block,below=of img,text width=30mm] (geo) {Height, normal, slope, curvature, roughness};
+  \node[block,right=of geo,text width=31mm] (geomlp) {Geometry MLP\\$d_g\!\to\!32$};
+  \node[physics,right=11mm of vis,text width=37mm,yshift=-9mm] (student) {Visual--geometry student\\$q_v(\eta,\ell)=\N(\mu_v,\Sigma_v)$};
+
+  \node[block,below=17mm of geomlp,text width=31mm] (hist) {$0.5$--$1.0$ s force, joint, IMU, action, contact history};
+  \node[block,right=of hist,text width=37mm] (teacher) {2-layer GRU, 128 hidden\\$q_p(\eta,\ell)=\N(\mu_p,\Sigma_p)$};
+  \node[physics,right=10mm of teacher,text width=37mm] (fuse) {Posterior fusion\\natural-parameter update};
+  \node[physics,below=of fuse,text width=37mm] (contact) {Analytical contact\\plus residual MLP};
+
+  \draw[arrow] (img) -- (vis);
+  \draw[arrow] (geo) -- (geomlp);
+  \draw[arrow] (vis) -- (student);
+  \draw[arrow] (geomlp) -- (student);
+  \draw[arrow] (hist) -- (teacher);
+  \draw[arrow] (student) -- (fuse);
+  \draw[arrow] (teacher) -- (fuse);
+  \draw[arrow] (fuse) -- (contact);
+  \draw[feedback] (teacher.north) .. controls +(0,8mm) and +(0,-8mm) .. node[above,font=\scriptsize]{teacher--student consistency} (student.south);
+\end{tikzpicture}
+}
+\caption{Cross-modal architecture. Visual prediction is a prior for untouched cells; post-contact evidence provides a teacher and online correction. The contact residual is conditioned on the fused low-dimensional posterior and instantaneous foot state.}
+\label{fig:architecture}
+\end{figure}
+
+The proposed default is intentionally small:
+\begin{itemize}
+  \item \textbf{visual encoder:} frozen DINOv2 ViT-S/14 dense patch features \citep{oquab2023dinov2}; a two-layer projection head maps 384 dimensions to $d_z=64$;
+  \item \textbf{geometry encoder:} two-layer MLP, hidden width 64, output $d_g=32$;
+  \item \textbf{visual posterior head:} fused $[z,g]$ through a three-layer MLP, width 128, output mean and log variance for $\eta$ and residual latent $\ell\in\R^8$;
+  \item \textbf{response teacher:} two-layer GRU with hidden size 128 over $0.5$--$1.0$ s of joint, IMU, foot-force, contact, and action history, followed by a Gaussian posterior head;
+  \item \textbf{force residual:} three-layer MLP, width 128, SiLU activations, shared across feet, outputting mean and heteroscedastic log variance for $\Delta f$; and
+  \item \textbf{epistemic uncertainty:} three to five independently initialized heads/ensembles, with the visual backbone shared and frozen.
+\end{itemize}
+
+This architecture is small enough for a single 16--24 GB GPU. Backbone freezing reduces overfitting to a small terrain dataset and makes online updates safe. Alternative encoders are treated as an ablation, not the central research variable.
+
+\subsection{Cross-modal posterior fusion}
+
+For diagonal Gaussian visual and proprioceptive posteriors, a product-of-experts update gives
+\begin{align}
+\Sigma_\xi^+ &= \left[(\Sigma_\xi^v)^{-1}+(\Sigma_\xi^p)^{-1}\right]^{-1},\\
+\mu_\xi^+ &= \Sigma_\xi^+\left[(\Sigma_\xi^v)^{-1}\mu_\xi^v+(\Sigma_\xi^p)^{-1}\mu_\xi^p\right].
+\label{eq:gaussian_fusion}
+\end{align}
+The teacher covariance is inflated according to force-label uncertainty and contact excitation. For example, a brief low-load normal touch should not collapse uncertainty in tangential friction. Dimensions not sufficiently excited retain their visual prior. In implementation, this is achieved with an excitation mask derived from the sensitivity matrix in \cref{eq:fisher}.
+
+To avoid overconfident extrapolation, uncertainty contains three terms:
+\begin{equation}
+\Sigma_\xi^{\mathrm{total}}=
+\underbrace{\E_m[\Sigma_{\xi,m}^{\mathrm{alea}}]}_{\text{sensor/contact noise}}
++\underbrace{\V_m[\mu_{\xi,m}]}_{\text{ensemble disagreement}}
++\underbrace{\Sigma_\xi^{\mathrm{map}}}_{\text{registration/age}}.
+\label{eq:uncertainty_decomp}
+\end{equation}
+An evidential or feature-distance OOD score, inspired by PIETRA \citep{cai2024pietra}, increases the prior variance when $[z,g]$ lies far from the training manifold. It never replaces the ensemble calibration test.
+
+\subsection{Response function and the role of visual change}
+
+For robot state $x_t$ and action sequence $U=(u_t,\ldots,u_{t+H-1})$, the physically meaningful response function is
+\begin{equation}
+\hat{\mathcal R}_\Theta(z,g,x_t,U)=
+\operatorname{Rollout}\left(x_t,U; q_v(\eta,\ell\mid z,g),f_\theta,\text{Eq.}\,\eqref{eq:rigid_body}\right),
+\label{eq:response_function}
+\end{equation}
+where $\mathcal R$ contains future state, force, contact mode, slip, sinkage, tracking error, and stability quantities. The requested ``change'' relation is retained at this response level:
+\begin{equation}
+\Delta\hat{\mathcal R}_*=
+\hat{\mathcal R}_\Theta(z_*,g_*,x_t,U)
+-\hat{\mathcal R}_\Theta(z_{\mathrm{cur}},g_{\mathrm{cur}},x_t,U).
+\label{eq:delta_response}
+\end{equation}
+Thus $\Delta z$ is never interpreted in isolation. Both counterfactuals use the same current state and action, which isolates the predicted effect of terrain. A Jacobian $J_z=\partial\hat{\mathcal R}/\partial z$ is valid only for small changes and is used for sensitivity analysis, not as the primary nonlinear model.
+
+\subsection{Training objectives}
+
+Training uses staged losses rather than a single end-to-end objective from the beginning.
+
+\paragraph{Force likelihood.}
+For measured contact force $f^{\mathrm{meas}}$ and predicted diagonal covariance $\Sigma_f$,
+\begin{equation}
+\Lcal_f=\frac{1}{2}\sum_{e,t}
+\left[(f^{\mathrm{meas}}-\hat f)^\top\Sigma_f^{-1}(f^{\mathrm{meas}}-\hat f)
++\log|\Sigma_f|\right].
+\label{eq:force_nll}
+\end{equation}
+
+\paragraph{Multi-step state rollout.}
+Starting from measured $x_t$, the model is rolled for $K$ steps using recorded commands:
+\begin{equation}
+\Lcal_{\mathrm{roll}}=\sum_{k=1}^{K}\gamma_k
+\left(\lVert r_{t+k}-\hat r_{t+k}\rVert_{W_r}^2+
+d_R(R_{t+k},\hat R_{t+k})^2+
+\lVert\nu_{t+k}-\hat\nu_{t+k}\rVert_{W_\nu}^2\right),
+\label{eq:rollout_loss}
+\end{equation}
+where $d_R$ is geodesic orientation error. Teacher forcing is gradually reduced by scheduled sampling.
+
+\paragraph{Visual teacher--student consistency.}
+After a terrain cell has been physically excited, the visual prior is trained toward the stop-gradient response posterior:
+\begin{equation}
+\Lcal_{\mathrm{vis}}=
+D_{\mathrm{KL}}\left(\operatorname{sg}[q_p(\eta,\ell\mid H^{p,f})]\;\Vert\;q_v(\eta,\ell\mid z,g)\right).
+\label{eq:vis_distill}
+\end{equation}
+The reverse direction is not used, because appearance must not overwrite force evidence.
+
+\paragraph{Physics and change consistency.}
+\begin{align}
+\Lcal_{\mathrm{phys}} &=
+\lambda_n[-\hat f_n]_+^2+
+\lambda_c[\lVert\hat f_t\rVert-\mu\hat f_n]_+^2+
+\lambda_E[-W_{\mathrm{diss}}]_+^2+
+\lambda_b\lVert\Delta f\rVert_2^2,\\
+\Lcal_\Delta &=
+\left\lVert
+(\mathcal R_b^{\mathrm{real}}-\mathcal R_a^{\mathrm{real}})
+-(\hat{\mathcal R}_b-\hat{\mathcal R}_a)
+\right\rVert_{W_\Delta}^2,
+\label{eq:physics_change_loss}
+\end{align}
+where paired episodes $a,b$ share similar state/action but differ in terrain. $\Lcal_\Delta$ directly trains the intended terrain-induced response change without pretending that $\Delta z$ alone is causal.
+
+The final stage objective is
+\begin{equation}
+\Lcal=\lambda_f\Lcal_f+\lambda_x\Lcal_{\mathrm{roll}}+\lambda_v\Lcal_{\mathrm{vis}}
++\lambda_{\mathrm{phys}}\Lcal_{\mathrm{phys}}+\lambda_\Delta\Lcal_\Delta
++\lambda_{\mathrm{cal}}\Lcal_{\mathrm{cal}},
+\label{eq:total_loss}
+\end{equation}
+where $\Lcal_{\mathrm{cal}}$ is a validation-set calibration penalty or post-hoc temperature scaling objective. Loss weights are first normalized by gradient magnitude and then fixed before final evaluation.
+
+\subsection{Training curriculum}
+
+\begin{table}[ht]
+\centering
+\caption{Training stages and frozen components. Progression is conditional on validation gates.}
+\label{tab:training_stages}
+\small
+\begin{tabularx}{\textwidth}{@{}C{10mm}L{33mm}Y Y@{}}
+\toprule
+\textbf{Stage} & \textbf{Train} & \textbf{Freeze / supervision} & \textbf{Gate}\\
+\midrule
+0 & Coordinate, sensor, robot, and actuator calibration & No terrain learning; rigid reference surface & Force zero/bias stable; frame and timing errors bounded\\
+1 & Analytical $\eta_r$ per controlled patch & Geometry and real force only & Identifiable parameters; no systematic force residual\\
+2 & Response GRU and residual $r_\rho$ & Analytical backbone regularized; force and rollout supervision & Held-out contact improvement without energy/friction violations\\
+3 & Visual--geometry prior $q_v$ & Backbone frozen; response posterior is teacher & Cross-terrain NLL and calibration better than terrain-class baseline\\
+4 & Four-leg simulator composition & Contact and actuator modules initially frozen & Stable integration and improved full-body rollout\\
+5 & Online posterior/memory & Backbone/contact weights frozen & Error falls after contacts without catastrophic local overconfidence\\
+6 & Risk-aware planner & Dynamics frozen during evaluation & Safety improvement at matched progress\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Default optimization uses AdamW, batch size 128--512 contact windows, learning rate $10^{-3}$ for heads/$10^{-4}$ for the residual, weight decay $10^{-4}$, gradient clipping at 1.0, and early stopping on held-out terrain NLL plus force NRMSE. These values are starting points; search is restricted to a small predeclared grid so that model selection does not consume the six-month schedule.
+
+\subsection{Data splits that prevent shortcut learning}
+
+Random frame splits would leak adjacent samples and terrain identity. Episodes are grouped before splitting, and the final benchmark contains:
+\begin{enumerate}
+  \item \textbf{leave-one-terrain-family-out:} all patches of a mechanical family held out;
+  \item \textbf{same appearance, different physics:} visually similar patches with altered moisture, substrate, or compliance;
+  \item \textbf{different appearance, same physics:} color/texture changes on a common mechanical base;
+  \item \textbf{unseen operating condition:} held-out load, impact speed, slip direction, inclination, and controller command;
+  \item \textbf{spatial boundary:} feet cross mixed terrain boundaries where one crop may contain multiple materials; and
+  \item \textbf{temporal shift:} repeated/degrading contacts to test the recurrent terrain state.
+\end{enumerate}
+All normalization statistics and calibration temperatures are fit on training/validation groups only. Final test cells remain sealed until architecture and thresholds are frozen.

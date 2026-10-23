@@ -1,0 +1,176 @@
+\section{Implementation Specification}
+\label{app:implementation}
+
+\subsection{End-to-end training procedure}
+
+\begin{tcolorbox}[colback=paper,colframe=blue,title={Algorithm 1: staged model construction},fonttitle=\bfseries\color{navy}]
+\begin{enumerate}[leftmargin=1.8em]
+  \item Calibrate $K,T_C^B$, robot inertial/kinematic parameters, force transforms, clocks, and rigid-floor actuator residual $\Delta\tau_\omega$.
+  \item For each terrain patch, collect synchronized episodes under the excitation design; reject only predeclared sensor faults and retain physical failures.
+  \item Fit analytical $\eta_r$ with \cref{eq:sysid}; inspect \cref{eq:fisher}; reduce/fix parameters if unidentifiable.
+  \item Train response teacher and residual contact model on force NLL and short rollout loss while enforcing \cref{eq:force_projection}.
+  \item Extract frozen dense visual features and registered geometry for every contact point. Train $q_v$ toward stop-gradient $q_p$ using \cref{eq:vis_distill}; calibrate ensemble variance on validation groups.
+  \item Freeze actuator and contact modules; plug four copies into \cref{eq:rigid_body}; test numerical stability and composition. Fine-tune only if errors are attributable and regularized.
+  \item Build the registered local map, fuse it into persistent $\mathcal G_t$, and initialize observed ground cells with $q_v$. Validate A*/D* on mapped and incrementally revealed U-shaped layouts.
+  \item Replay held-out contact trajectories without online updates; then enable direct-cell and sparse-memory corrections.
+  \item Freeze all learning for final planning evaluation. Run D* subgoal selection and MPPI with matched map, compute, and action constraints for all baselines.
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Online deployment procedure}
+
+\begin{tcolorbox}[colback=paper,colframe=teal,title={Algorithm 2: one receding-horizon cycle},fonttitle=\bfseries\color{navy}]
+\begin{enumerate}[leftmargin=1.8em]
+  \item Acquire time-aligned image/depth, $q,\nu$, IMU, and prior action; update localization covariance.
+  \item Fuse depth into the local geometry map; project frozen image tokens into visible cells; update $(z_\xi,g_\xi,\Sigma_\xi^{\mathrm{map}})$.
+  \item For newly visible cells, initialize $q_v(\eta_\xi,\ell_\xi)$ and OOD-inflated uncertainty.
+  \item Transform observed cells to the world frame, update persistent occupancy/physical map $\mathcal G_t$, and trigger D* Lite if affected route costs changed.
+  \item Select look-ahead subgoal $p_t^{\mathrm{sub}}$ on the global route. If no safe route exists, stop or choose a bounded exploration frontier rather than moving greedily toward the goal.
+  \item Sample command perturbations toward $p_t^{\mathrm{sub}}$ and common-random-number contact parameters. For every candidate, repeatedly query four feet, solve \cref{eq:implicit}, update $s_\xi$, and accumulate \cref{eq:risk_cost}.
+  \item Reject unsafe/non-converged candidates; update the nominal MPPI sequence with \cref{eq:mppi}. If none remain, execute conservative fallback.
+  \item Execute only the first command. The independent low-level controller enforces joint-level safety.
+  \item At contact completion, encode force/proprio history, fuse the contacted-cell posterior with \cref{eq:gaussian_fusion}, and update the bounded residual dictionary. Log prior, posterior, prediction, observation, and update magnitude.
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Tensor and module specification}
+
+\begin{table}[ht]
+\centering
+\caption{Reference tensor dimensions. Dimensions may change with the available robot signals, but the interfaces remain fixed.}
+\label{tab:tensors}
+\small
+\begin{tabularx}{\textwidth}{@{}L{31mm}C{25mm}Y@{}}
+\toprule
+\textbf{Quantity} & \textbf{Dimension} & \textbf{Contents}\\
+\midrule
+Dense visual token $z_\xi$ & 64 & Projected DINOv2 feature, view-fused per map cell\\
+Geometry $g_\xi$ & 8--12 & Height, normal (3), slope, two curvatures, roughness, confidence\\
+Effective parameter $\eta_\xi$ & 4--6 & $\mu,k,c,\gamma$; optional anisotropy ratio/direction\\
+Residual latent $\ell_\xi$ & 8 & Non-interpretable local code, Gaussian posterior\\
+Terrain state $s_\xi$ & 0, 2, or 4 & None for rigid; compaction/sinkage and shear/history for deformable\\
+Instant foot state $\chi_i$ & 24--40 & Pose representation, linear/angular velocity, penetration/rate, load estimate, command, contact flags\\
+Response history step & robot-dependent & Joint position/velocity/torque, IMU, force, action, contact flags\\
+Response GRU state & 128 & Two-layer causal GRU\\
+Force output & 6 & Mean and log variance for $f_x,f_y,f_z$ before hard constraint\\
+Planner action & 3 core & $v_x^{cmd},v_y^{cmd},\omega_z^{cmd}$\\
+Risk vector & 8--16 & Slip, tilt, sinkage, collision, tracking, torque, energy, solver health\\
+Persistent map cell $\mathcal G_t(\xi)$ & 20--100 & Occupancy log-odds, observed flag, geometry, feature summary, contact posterior, uncertainty, age\\
+Global route/subgoal & variable / 3 & World-frame route cells plus current $(x,y,\psi)$ look-ahead target\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Per-step simulator pseudocode}
+
+\begin{verbatim}
+inputs: q_t, nu_t, command u_t, local map M_t, terrain states s_t
+tau_t = low_level_controller(q_t, nu_t, u_t) + actuator_residual(history)
+
+initialize q_next, nu_next from previous step
+repeat until converged or max_iter:
+    for foot i in {1,2,3,4}:
+        pose_i, vel_i, J_i = forward_kinematics(q_next, nu_next)
+        xi_i, geometry_i = collide_and_query(pose_i, M_t)
+        contact_sample_i = sample_or_mean(M_t.posterior[xi_i])
+        f_i, cov_i = contact_model(pose_i, vel_i, u_t,
+                                   geometry_i, contact_sample_i,
+                                   s_t[xi_i])
+    nu_new = implicit_body_solve(q_t, nu_t, tau_t, {J_i, f_i})
+    q_new  = integrate_configuration(q_t, nu_new)
+    damp/update q_next, nu_next
+
+if not converged: mark rollout unsafe and reduce step/fallback
+update contacted terrain states s_{t+1}
+return q_next, nu_next, forces, force covariance, solver flag
+\end{verbatim}
+
+\subsection{Dataset record and quality control}
+
+Each episode is immutable after collection and contains:
+\begin{itemize}
+  \item identifiers: episode, terrain patch, preparation batch, robot/foot, operator, date/time;
+  \item calibration hashes: intrinsics/extrinsics, force transform, robot model, synchronization version;
+  \item environment: material, depth/thickness, slope, moisture/compaction if measurable, light, temperature;
+  \item commands: reference joint/foot trajectory, controller gains, high-level command, abort reason;
+  \item high-rate signals: timestamps, joint states, current/torque, IMU, force/torque, estimated foot pose/velocity, contact state;
+  \item image/depth frames with exposure and camera pose;
+  \item derived but reproducible values: penetration, normal/tangent frames, filtered acceleration, episode quality flags; and
+  \item split label assigned at the episode/patch level before model training.
+\end{itemize}
+
+Automatic QC plots show clock offsets, missing samples, force saturation, pre-contact bias, force/penetration hysteresis, commanded versus achieved motion, and camera/foot projection. A raw episode is never overwritten by filtered data.
+
+\section{Experimental Matrix}
+\label{app:matrix}
+
+\begin{table}[ht]
+\centering
+\caption{Core excitation levels before D-optimal subsampling.}
+\label{tab:matrix}
+\small
+\begin{tabularx}{\textwidth}{@{}L{34mm}Y Y@{}}
+\toprule
+\textbf{Factor} & \textbf{Candidate levels} & \textbf{Why it matters}\\
+\midrule
+Normal load / target indentation & low, nominal, high; within rig and quadruped safety envelope & Friction scales with load; compliance can be nonlinear\\
+Vertical speed & quasi-static, nominal landing, high safe impact & Separates stiffness, damping, and impulse behavior\\
+Tangential speed & zero, pre-slip, sliding; forward/lateral/diagonal & Friction transition, directionality, residual shear\\
+Foot orientation & level plus positive/negative pitch and roll & Edge/area contact and frame sensitivity\\
+Terrain inclination & level, moderate uphill/downhill/cross-slope & Geometry--physics interaction and anisotropy\\
+Contact repetition & fresh, 2nd, 5th, 10th contact & Compaction, hysteresis, recovery\\
+Appearance condition & normal light, shadow, changed color/cover & Tests visual robustness without changing physics\\
+Material condition & matched appearance with altered backing/moisture where reproducible & Exposes failure of semantic shortcuts\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+For four core surfaces, 100--150 short selected episodes per surface give 400--600 training/validation episodes plus 80--120 sealed test episodes. Impact and boundary trials are collected separately. Actual count is determined by force variability: collection stops only when bootstrap confidence on repeatability is adequate, not at an arbitrary image count.
+
+\section{Failure Taxonomy and Interpretation}
+\label{app:failures}
+
+\begin{table}[ht]
+\centering
+\caption{How failures will be diagnosed rather than collapsed into ``model error.''}
+\label{tab:failure_taxonomy}
+\small
+\begin{tabularx}{\textwidth}{@{}L{31mm}Y Y@{}}
+\toprule
+\textbf{Observed failure} & \textbf{Likely discriminator} & \textbf{Action}\\
+\midrule
+Force error on rig, all terrains & Frame/timing/force calibration, actuator/fixture dynamics & Stop learning; repair G0\\
+Good force, poor one-step body acceleration & Robot inertial/Jacobian model or force application point & Recalibrate mechanics/contact point\\
+Good one-step, diverging multi-step rollout & Contact stiffness/integration, controller delay, state-estimation bias & Implicit solve, smaller step, actuator residual\\
+Known terrain good, unseen appearance poor with high uncertainty & Expected OOD behavior & Conservative planning/contact exploration\\
+Unseen appearance poor with low uncertainty & Miscalibration/shortcut & Add ambiguity split, ensemble/OOD inflation; fail G4\\
+Direct contact update helps cell but hurts neighbors & Kernel propagation too broad & Shorten length scales or direct-cell only\\
+Robot oscillates or stalls inside a U-shaped obstacle & Local-only goal attraction, incomplete world memory, or unknown-space policy & Inspect global occupancy and localization; enable persistent A*/D*; fail G6 if a valid mapped route exists\\
+Planner safe but immobile & Risk weights/uncertainty floor overly conservative & Report Pareto curve; tune at matched safety constraints\\
+Planner fast but unsafe & Missing risk observable or under-dispersed posterior & Expand cost/constraints; recalibrate before hardware\\
+Mud worsens after repeated steps & Recurrent state absent or wrong & Enable/expand $s_\xi$; restrict supported materials\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Mentor Review Checklist}
+\label{app:checklist}
+
+The following decisions are requested at project approval, because they materially affect feasibility:
+\begin{enumerate}
+  \item Confirm access to the single-leg rig, available joint/torque signals, and the exact foot hardware.
+  \item Confirm whether a force plate or six-axis F/T sensor can be used; otherwise approve the narrower inverse-dynamics claim.
+  \item Confirm the four core terrain samples and a reproducible preparation/reset method.
+  \item Confirm the quadruped simulator/URDF and whether limited real whole-body trials are possible in weeks 19--25.
+  \item Approve persistent occupancy/elevation mapping and A*/D* Lite as standard core infrastructure, with neural time fields explicitly optional.
+  \item Approve the core success definition (G0--G6) independent of photorealistic and neural-time-field stretch goals.
+  \item Approve a weekly quantitative milestone review and explicit scope reduction if a gate is missed.
+\end{enumerate}
+
+\begin{keybox}[First two weeks: exact action list]
+\textbf{Day 1--2:} inventory sensors, signal rates, simulator/robot model, terrain access, and safety constraints.\\
+\textbf{Day 3--5:} define frames and the contact plug-in API; produce a rigid analytical baseline in the existing one-leg simulator.\\
+\textbf{Day 6--8:} calibrate force/kinematics/timestamps and run rigid-floor repeatability.\\
+\textbf{Day 9--10:} run one indentation and one tangential pilot on two contrasting surfaces; plot force versus penetration/velocity.\\
+\textbf{Exit:} a signed-off measurement specification, pilot plot, supported operating envelope, and a decision on direct force sensing versus inverse dynamics.
+\end{keybox}

@@ -1,0 +1,155 @@
+{
+  "experiment": "2-GPU strict unseen-trajectory zero-shot V7-F",
+  "gpus": [
+    "NVIDIA GeForce RTX 4080",
+    "NVIDIA GeForce RTX 4080"
+  ],
+  "exact_training_keys": [
+    [
+      "ForestEnv",
+      "P2000"
+    ],
+    [
+      "ForestEnv",
+      "P2003"
+    ],
+    [
+      "ForestEnv",
+      "P2007"
+    ],
+    [
+      "ForestEnv",
+      "P2011"
+    ],
+    [
+      "ForestEnv",
+      "P2015"
+    ],
+    [
+      "ForestEnv",
+      "P2019"
+    ],
+    [
+      "ForestEnv",
+      "P2022"
+    ],
+    [
+      "GreatMarsh",
+      "P2000"
+    ],
+    [
+      "GreatMarsh",
+      "P2005"
+    ],
+    [
+      "GreatMarsh",
+      "P2010"
+    ],
+    [
+      "GreatMarsh",
+      "P2015"
+    ],
+    [
+      "GreatMarsh",
+      "P2020"
+    ],
+    [
+      "GreatMarsh",
+      "P2023"
+    ],
+    [
+      "GreatMarsh",
+      "P2029"
+    ],
+    [
+      "OldTownFall",
+      "P2000"
+    ],
+    [
+      "OldTownFall",
+      "P2002"
+    ],
+    [
+      "OldTownFall",
+      "P2003"
+    ],
+    [
+      "OldTownFall",
+      "P2004"
+    ],
+    [
+      "OldTownFall",
+      "P2005"
+    ],
+    [
+      "OldTownFall",
+      "P2006"
+    ],
+    [
+      "OldTownFall",
+      "P2007"
+    ],
+    [
+      "SeasonalForestWinter",
+      "P2000"
+    ],
+    [
+      "SeasonalForestWinter",
+      "P2003"
+    ],
+    [
+      "SeasonalForestWinter",
+      "P2009"
+    ],
+    [
+      "SeasonalForestWinter",
+      "P2012"
+    ],
+    [
+      "SeasonalForestWinter",
+      "P2015"
+    ],
+    [
+      "SeasonalForestWinter",
+      "P2018"
+    ],
+    [
+      "SeasonalForestWinter",
+      "P2021"
+    ]
+  ],
+  "held_out_runs": [
+    {
+      "terrain_type": "forest",
+      "environment": "ForestEnv",
+      "run": "P2001"
+    },
+    {
+      "terrain_type": "swamp_marsh",
+      "environment": "GreatMarsh",
+      "run": "P2027"
+    },
+    {
+      "terrain_type": "rough_uneven",
+      "environment": "SeasonalForestWinter",
+      "run": "P2006"
+    },
+    {
+      "terrain_type": "wet_uneven_proxy",
+      "environment": "OldTownFall",
+      "run": "P2001"
+    }
+  ],
+  "training_holdout_overlap": [],
+  "requested_test_spacing_s": [
+    7.0,
+    9.0,
+    10.0
+  ],
+  "local_adaptation": false,
+  "V7_gradient_updates_on_heldout": false,
+  "V7F_gradient_updates_on_heldout": false,
+  "heldout_physics_fit": false,
+  "heldout_normalization_fit": false,
+  "calibration_policy": "For each terrain, use normalization statistics and the already-fitted physics prior from the corresponding original training trajectory; never fit them on the held-out run."
+}

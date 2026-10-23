@@ -1,0 +1,199 @@
+\section{Physical Model: From One Foot to Four Coupled Contacts}
+\label{sec:physics}
+
+\subsection{State, frames, and the learned object}
+
+Let the floating-base quadruped configuration be $q=(r_B,R_B,q_j)$ and generalized velocity $\nu=(v_B,\omega_B,\dot q_j)$. World, body, foot, contact, and camera frames are denoted $W,B,F_i,C_i,$ and $C$. The contact frame has $z$-axis equal to the local outward terrain normal $n_\xi$. At time $t$, foot $i$ queries terrain cell $\xi(i,t)$ and forms
+\begin{align}
+g_\xi &= [h_\xi,n_\xi,\kappa_\xi,\rho_\xi], \\
+\chi_{i,t} &= [R^W_{F_i},v^W_{F_i},\delta_{i,t},\dot\delta_{i,t},u_t,\hat N_{i,t},c_{i,t}], \\
+y_{i,t} &= [z_\xi,g_\xi,\chi_{i,t},s_{\xi,t}],
+\label{eq:contact_input}
+\end{align}
+where $h$ is height, $\kappa$ curvature, $\rho$ roughness, $\delta$ penetration, $u_t$ the high-level command, $\hat N$ predicted normal load, $c$ a contact-mode indicator, and $s$ a history-dependent terrain state.
+
+The learned object is the local contact function
+\begin{equation}
+f_i^W=f_\theta(y_{i,t})\in\R^3,
+\label{eq:learned_contact}
+\end{equation}
+not an image-to-force mapping and not a force measured at the hip. The same parameters $\theta$ are shared across all four feet. Leg-specific effects enter through kinematics, foot orientation, actuator state, and loading; foot-specific parameters are introduced only if hardware calibration demonstrates a repeatable asymmetry.
+
+\subsection{Physics-guided contact law}
+
+The model uses a constrained analytical backbone plus a small residual. This provides extrapolation behavior, reduces data demand, and prevents obviously non-physical output. The signed distance of the foot surface from the terrain is $\phi_i(q)$ and
+\begin{equation}
+\delta_i=[-\phi_i(q)]_+,
+\qquad
+v_{t,i}=(I-n_\xi n_\xi^\top)v_{F_i},
+\qquad
+v_{n,i}=n_\xi^\top v_{F_i}.
+\label{eq:contact_kinematics}
+\end{equation}
+The visual--geometric model predicts a posterior over positive effective parameters
+\begin{equation}
+\eta_\xi=[\mu_\xi,k_\xi,c_\xi,\gamma_\xi]
+=\big[\softplus(\tilde\mu),\softplus(\tilde k),\softplus(\tilde c),1+\softplus(\tilde\gamma)\big],
+\label{eq:positive_params}
+\end{equation}
+where $\mu$ is effective friction, $k$ normal stiffness, $c$ normal damping, and $\gamma$ a nonlinear indentation exponent. These are useful contact parameters, not claimed intrinsic material constants \citep{chen2024terrain}.
+
+The analytical normal and tangential components in the contact frame are
+\begin{align}
+\tilde f_{n,i} &= \left[k_\xi\delta_i^{\gamma_\xi}+c_\xi\delta_i^{\gamma_\xi-1}\dot\delta_i\right]_+, \\
+\tilde f_{t,i} &= -\mu_\xi\tilde f_{n,i}
+\tanh\!\left(\frac{\lVert v_{t,i}\rVert}{v_s}\right)
+\frac{v_{t,i}}{\lVert v_{t,i}\rVert+\epsilon},
+\label{eq:analytical_contact}
+\end{align}
+with smoothing speed $v_s$ and numerical constant $\epsilon$. A residual network $r_\rho$ captures phenomena the backbone cannot express:
+\begin{equation}
+\Delta f^{C_i}_{i,t}=r_\rho\!\left(z_\xi,g_\xi,\chi_{i,t},s_{\xi,t},\ell_\xi\right),
+\qquad \Delta f\in\R^3.
+\label{eq:force_residual}
+\end{equation}
+The final contact force is projected to a friction cone and rotated to the world frame:
+\begin{align}
+\C(\mu_\xi)&=\{(f_t,f_n): f_n\ge 0,\ \lVert f_t\rVert_2\le\mu_\xi f_n\},\\
+f_i^W&=R^W_{C_i}\Pi_{\C(\mu_\xi)}
+\left(
+\begin{bmatrix}\tilde f_{t,i}\\ \tilde f_{n,i}\end{bmatrix}
++\Delta f^{C_i}_{i,t}
+\right).
+\label{eq:force_projection}
+\end{align}
+The projection makes non-negative normal force and bounded tangential force structural properties. A soft projection may be used during training; a hard projection is retained during deployment.
+
+\subsection{History-dependent and deformable terrain}
+
+A memoryless law is adequate for rigid rubber, acrylic, or foam over small deformation, but not for granular or muddy terrain. Repeated loading changes sinkage, compaction, and available shear resistance. Each contacted cell therefore stores a small recurrent state
+\begin{equation}
+s_{\xi,t+1}=\operatorname{clip}\left[s_{\xi,t}+\Delta t\,g_\varphi\!\left(s_{\xi,t},\tilde f_{n,i},\lVert v_{t,i}\rVert,\delta_i,\eta_\xi,\ell_\xi\right)\right],
+\label{eq:terrain_state}
+\end{equation}
+with two to four bounded dimensions interpreted operationally as compaction/sinkage and shear-history state. The update is zero when the cell is not contacted, with an optional slow recovery term. The project will not fit a high-parameter terramechanics model unless the rig excites its parameters independently; an underidentified ``physical'' model is less defensible than a small effective state.
+
+\subsection{Four-foot composition through multibody dynamics}
+
+The quadruped equations are not learned from scratch. Standard rigid-body mechanics couples the four local forces:
+\begin{equation}
+M(q)\dot\nu+h(q,\nu)=S^\top\tau+\sum_{i=1}^{4}J_i(q)^\top f_i^W+f_{\mathrm{ext}},
+\label{eq:rigid_body}
+\end{equation}
+where $M$ is the mass matrix, $h$ contains Coriolis, centrifugal, and gravity terms, $S$ selects actuated joints, $J_i$ is the foot Jacobian, and $f_{\mathrm{ext}}$ covers known external forces. Four contacts are coupled because every $f_i$ changes base acceleration, joint motion, the load borne by every other leg, and consequently their next contact forces.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[node distance=6mm and 11mm]
+  \node[block,text width=35mm] (state) {Current $q_t,\nu_t$\\controller command $u_t$};
+  \node[physics,right=of state,text width=35mm] (kin) {Foot kinematics\\$J_i$, $v_{F_i}$, $\delta_i$, $\xi_i$};
+  \node[physics,right=of kin,text width=38mm] (forces) {Four shared contact queries\\$f_i=f_\theta(y_i)$};
+  \node[physics,below=10mm of forces,text width=38mm] (body) {Rigid-body solve\\$M\dot\nu+h=S^\top\tau+\sum J_i^\top f_i$};
+  \node[block,left=of body,text width=35mm] (integrate) {Implicit integration\\$q_{t+1},\nu_{t+1}$};
+  \node[block,left=of integrate,text width=35mm] (controller) {Fixed low-level\\locomotion controller};
+  \draw[arrow] (state) -- (kin);
+  \draw[arrow] (kin) -- (forces);
+  \draw[arrow] (forces) -- (body);
+  \draw[arrow] (body) -- (integrate);
+  \draw[arrow] (integrate) -- (controller);
+  \draw[arrow] (controller) -- (state);
+  \draw[feedback] (integrate.north) -- ++(0,5mm) -| (kin.south);
+\end{tikzpicture}
+\caption{The composition claim. No independent ``four-leg network'' is needed for the core model. Whole-body behavior emerges from four state-dependent local forces, a calibrated actuator model, and standard multibody coupling.}
+\label{fig:coupling}
+\end{figure}
+
+Because force depends on next-step penetration and velocity, an explicit one-pass update may be unstable for stiff contact. The simulator will use semi-implicit/implicit Euler. For a step of duration $\Delta t$,
+\begin{equation}
+\nu_{t+1}=\nu_t+\Delta t\,M(q_t)^{-1}
+\left[S^\top\tau_t-h_t+\sum_iJ_i(q_t)^\top f_i(q_{t+1},\nu_{t+1},s_t)\right].
+\label{eq:implicit}
+\end{equation}
+The contact--load circularity is resolved by the simulator's contact solver or two to five damped fixed-point/Newton iterations. Iteration stops when both generalized-velocity and force changes fall below tolerance. If convergence fails, the step is halved and the rollout is marked high risk. This is critical: the normal load should emerge from the coupled solve, not be supplied as an independent ground-truth input at deployment.
+
+\subsection{Separating actuator error from terrain error}
+
+If motor delay, torque tracking, or joint friction is left unmodelled, the contact network will absorb it and cease to transfer across robots or controllers. Following the residual-dynamics motivation in visually aligned simulators such as QuadVerse \citep{chen2026quadverse}, actuator calibration is performed first on a rigid, high-friction reference floor:
+\begin{align}
+\tau_t^{\mathrm{real}} &= \tau_t^{\mathrm{nom}}+\Delta\tau_\omega(H_t^a),\\
+\tau_t^{\mathrm{nom}} &= K_p(q_t^{\mathrm{des}}-q_t)-K_d\dot q_t+\tau_t^{\mathrm{ff}},
+\label{eq:actuator_residual}
+\end{align}
+where $H_t^a$ contains recent desired/measured joint states, motor current, battery voltage if available, and command history. A small linear time-delay model or two-layer GRU is fitted to rigid-floor trials and then frozen. Terrain experiments subsequently identify $f_\theta$. A final joint fine-tuning stage is permitted only with regularization that preserves the rigid-floor calibration.
+
+\subsection{Single-leg identification: instrumentation and data}
+
+\subsubsection{Minimum instrumentation}
+
+\begin{table}[ht]
+\centering
+\caption{Recommended sensing and synchronization. Rates are engineering targets, not hard dependencies.}
+\label{tab:sensors}
+\small
+\begin{tabularx}{\textwidth}{@{}L{29mm}L{30mm}Y Y@{}}
+\toprule
+\textbf{Signal} & \textbf{Target rate} & \textbf{Purpose} & \textbf{Fallback}\\
+\midrule
+Six-axis foot F/T or force plate & $\ge 500$ Hz & Ground-truth $f^{\mathrm{meas}}$ and impulse & Calibrated inverse dynamics; claims weakened\\
+Joint angle/velocity/current or torque & 200--500 Hz & Foot kinematics, actuator model, load context & Encoder differentiation with filtering\\
+IMU & $\ge 200$ Hz & Rig/base motion and impact timing & External tracker for constrained rig\\
+RGB or RGB-D camera & 20--30 Hz & Appearance, geometry, camera registration & RGB plus measured height/slope\\
+Foot/terrain pose or depth & $\ge 100$ Hz & Penetration and local normal & Calibrated kinematics plus static surface scan\\
+Hardware timestamps/trigger & common clock & Cross-modal alignment & Offline cross-correlation and clock model\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+All force labels are expressed at the foot--terrain contact in the local contact frame, then converted to world coordinates using calibrated transforms. A pivot or hip reaction is not used directly as the terrain target. If only actuator torque is available, foot force is inferred by constrained inverse dynamics,
+\begin{equation}
+J_f(q)^\top \hat f=M_\ell(q)\ddot q+h_\ell(q,\dot q)-\tau-\hat f_{\mathrm{fixture}},
+\label{eq:inverse_dynamics_force}
+\end{equation}
+with acceleration filtering, fixture-force calibration, and uncertainty propagated into the training covariance. This fallback is noisier and may not identify tangential force reliably.
+
+\subsubsection{Excitation protocol}
+
+The dataset must span the operating envelope that a quadruped foot will see. For every terrain patch, the rig performs:
+\begin{enumerate}
+  \item \textbf{quasi-static indentation} at multiple depths to identify stiffness/nonlinearity;
+  \item \textbf{rate sweeps} at multiple vertical speeds to separate damping from stiffness;
+  \item \textbf{tangential sweeps} under multiple normal loads and directions to identify friction and anisotropy;
+  \item \textbf{combined normal--tangential motion} to expose coupling and slip onset;
+  \item \textbf{landing/hopping pulses} to validate impact impulse outside slow identification data; and
+  \item \textbf{inclined and repeated contacts} to excite orientation, compaction, and hysteresis.
+\end{enumerate}
+
+Core surfaces are chosen to separate mechanical phenomena: rigid high-friction rubber, controlled low-friction acrylic/film, compliant foam, and a reproducible granular/sinkable bed. Mud or wet organic terrain is a final generalization test, not the first training surface. A full factorial design is unnecessary; a D-optimal or Latin-hypercube subset over normal load, vertical speed, tangential speed, inclination, and foot orientation limits collection to approximately 100--150 short episodes per core surface, with at least five repeats at critical boundary conditions.
+
+\subsubsection{Parameter identification and identifiability}
+
+For terrain region $r$, analytical parameters are first identified without a neural residual:
+\begin{equation}
+\eta_r^*=\arg\min_{\eta}
+\sum_{e\in\D_r}\sum_t
+\left\lVert f_{e,t}^{\mathrm{meas}}-f_{\mathrm{ana}}(\chi_{e,t};\eta)\right\rVert_{W_f}^2
++\lambda_\eta\lVert\eta-\eta_0\rVert_2^2
++\lambda_E\Lcal_E,
+\label{eq:sysid}
+\end{equation}
+where $\Lcal_E$ penalizes net energy generation over passive contact cycles. A gradient method is used for the differentiable surrogate; grid/Bayesian search is retained for non-differentiable simulator parameters.
+
+Before fitting, local identifiability is checked with the sensitivity/Fisher matrix
+\begin{equation}
+\mathcal I(\eta)=\sum_{e,t}
+\left(\frac{\partial \hat f_{e,t}}{\partial\eta}\right)^\top
+\Sigma_f^{-1}
+\left(\frac{\partial \hat f_{e,t}}{\partial\eta}\right).
+\label{eq:fisher}
+\end{equation}
+Near-zero eigenvalues imply that the experiment cannot distinguish some parameters. The remedy is to add a targeted excitation, fix a parameter from calibration, or reduce $\eta$ and move unexplained structure to $\ell$; it is not to report an unstable physical estimate.
+
+\subsection{Reference implementation interface}
+
+At simulator step $t$, the contact plug-in receives
+\begin{equation}
+\texttt{query}(i,\xi,q,\nu,u,z_\xi,g_\xi,\mu_\xi,\Sigma_\xi,s_\xi)
+\mapsto (f_i,\Sigma_{f_i},s_{\xi,t+1}).
+\label{eq:api}
+\end{equation}
+The interface is engine-agnostic. MuJoCo is the simplest core target because its rigid-body model and contact pipeline are lightweight \citep{todorov2012mujoco}; Isaac Lab is an optional batched-rollout target if GPU access and integration time permit. A reference analytical implementation remains available for every experiment so that learned improvements can be isolated.

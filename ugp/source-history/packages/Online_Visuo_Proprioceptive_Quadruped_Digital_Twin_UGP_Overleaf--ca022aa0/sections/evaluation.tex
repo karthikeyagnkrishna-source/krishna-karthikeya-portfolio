@@ -1,0 +1,144 @@
+\section{Experimental Evaluation}
+\label{sec:evaluation}
+
+\subsection{Evaluation ladder}
+
+The validation order mirrors the causal structure of the method. A later claim is made only if the earlier interface has passed.
+
+\begin{enumerate}
+  \item \textbf{Sensor and rigid-floor calibration:} timing, frame transforms, actuator residual, force noise, and repeatability.
+  \item \textbf{Single-contact interpolation:} held-out loads/speeds on known terrain patches.
+  \item \textbf{Single-contact extrapolation:} held-out terrain family and appearance/physics ambiguity tests.
+  \item \textbf{Four-leg composition in simulation:} same local law under changing multi-foot load distribution, gait, and commands.
+  \item \textbf{Limited whole-robot validation:} safe, low-speed traversal over controlled patches if hardware is available.
+  \item \textbf{Online adaptation:} error and calibration before/after one to five contacts.
+  \item \textbf{Global topology:} mapped and incrementally revealed U-shaped/cul-de-sac layouts, comparing local-only waypoints with persistent A*/D* routes.
+  \item \textbf{Closed-loop physical planning:} repeated navigation trials at matched progress and command limits.
+\end{enumerate}
+
+This ladder avoids using planning success to hide an inaccurate physical model. Contact, composition, perception, uncertainty, and planning are reported separately before an end-to-end result.
+
+\subsection{Metrics}
+
+\begin{table}[ht]
+\centering
+\caption{Metrics reported by subsystem.}
+\label{tab:metrics}
+\small
+\begin{tabularx}{\textwidth}{@{}L{27mm}Y Y@{}}
+\toprule
+\textbf{Subsystem} & \textbf{Primary metrics} & \textbf{Diagnostic metrics}\\
+\midrule
+Contact force & Axis-wise RMSE/NRMSE; normal impulse error; tangential direction error; slip-onset F1; sinkage MAE & Friction-cone violation; passive-energy violation; error versus load/speed/angle; spectral error\\
+Coupled rollout & Base position/velocity MAE; roll/pitch geodesic error; joint-state error; contact timing F1; 0.25/0.5/1.0 s drift & Per-foot force distribution; solver failures; error accumulation slope\\
+Visual prior & NLL; posterior coverage at 50/80/90/95\%; expected calibration error; OOD AUROC & Same-appearance/different-physics confusion; parameter/latent sensitivity\\
+Online update & Error after 0,1,2,5 contacts; uncertainty contraction; negative transfer rate & Memory size, update latency, spatial decay, forgetting\\
+Global mapping/route & U-shape escape success; collision/stall; path ratio to known-map optimum; replanning latency & Occupancy IoU; localization drift; unknown-cell exposure; number of route reversals/replans\\
+Planning & Success; fall/stall; slip distance/events; worst-case/CVaR cost; completion time; energy per meter & Clearance, tilt, intervention rate, computation time and missed deadlines\\
+Twin registration & Reprojection error; foot touchdown-to-surface error & Map age, pose covariance, feature consistency across views\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Normalized force error is
+\begin{equation}
+\operatorname{NRMSE}(f_j)=
+\frac{\sqrt{\frac{1}{N}\sum_t(f_{j,t}-\hat f_{j,t})^2}}
+{f_{j,95\%}^{\mathrm{meas}}-f_{j,5\%}^{\mathrm{meas}}+\epsilon},
+\label{eq:nrmse}
+\end{equation}
+which is less distorted by impact outliers than normalization by the absolute maximum. Uncertainty is accepted only if coverage is close to nominal and interval width is useful; a trivially wide interval does not count as calibrated performance.
+
+\subsection{Baselines}
+
+\begin{table}[ht]
+\centering
+\caption{Baselines isolate where performance comes from.}
+\label{tab:baselines}
+\small
+\begin{tabularx}{\textwidth}{@{}C{8mm}L{38mm}Y@{}}
+\toprule
+\textbf{ID} & \textbf{Baseline} & \textbf{Question answered}\\
+\midrule
+B0 & Uniform rigid/contact simulator & Does any terrain adaptation help?\\
+B1 & Per-terrain oracle fitted parameters & Upper bound for known patches; separates visual error from contact-model error\\
+B2 & Visual terrain class to fixed friction & Is a semantic/scalar model sufficient?\\
+B3 & Vision-to-friction/stiffness point estimate \citep{chen2024terrain} & Does posterior/residual/history add value?\\
+B4 & Black-box perceptive forward dynamics \citep{roth2025perceptive} & Does explicit contact composition improve transfer, diagnosis, or data efficiency?\\
+B5 & Hybrid contact law without visual prior & What is gained before first contact?\\
+B6 & Hybrid contact law without online update & What is gained from reality feedback?\\
+B7 & Full model, deterministic mean only & Does uncertainty-aware planning help?\\
+B8 & Full model with oracle map labels & How much error is caused by registration/perception rather than dynamics?\\
+B9 & Robot-centric local edge-waypoint planner & Does persistent world-frame memory remove U-shape/cul-de-sac local minima?\\
+B10 & Persistent A* versus D* Lite versus time field & Is incremental or neural/global-field complexity justified by path quality or replanning time?\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+All baselines receive the same state estimator, low-level controller, geometry map, command bounds, training episodes where applicable, and planner sample budget. The oracle is not presented as deployable.
+
+\subsection{Ablations}
+
+The following ablations are predeclared:
+\begin{itemize}
+  \item analytical law only versus analytical plus residual;
+  \item memoryless versus recurrent terrain state;
+  \item no geometry, no visual feature, and no contact history;
+  \item friction-only versus friction plus compliance/damping;
+  \item visual student trained on class/parameter labels versus response-posterior distillation;
+  \item independent per-foot rollout versus fully coupled equation \eqref{eq:rigid_body};
+  \item uncalibrated versus calibrated/frozen actuator residual;
+  \item point estimate versus aleatoric uncertainty versus ensemble total uncertainty;
+  \item direct-cell update versus spatial/feature kernel propagation;
+  \item coarse terrain regions versus fine-grained contact field; and
+  \item physics rollouts versus distilled fast forward surrogate for planning;
+  \item robot-centric local map versus persistent world-frame map; and
+  \item A* versus D* Lite versus Fast Marching/time field on identical global costs.
+\end{itemize}
+
+\subsection{Concrete acceptance criteria and decision gates}
+
+The numbers below are targets suitable for mentor review, not fabricated expected results. They create honest stop/go decisions.
+
+\begin{table}[ht]
+\centering
+\caption{Proposed success and fallback gates.}
+\label{tab:gates}
+\small
+\begin{tabularx}{\textwidth}{@{}L{24mm}Y Y@{}}
+\toprule
+\textbf{Gate} & \textbf{Proceed criterion} & \textbf{Fallback if missed}\\
+\midrule
+G0: measurement & Force bias $<2\%$ of test range; timing error $<2$ high-rate samples; rigid-floor repeatability documented & Recalibrate; reduce claims to simulation/inverse-dynamics study\\
+G1: local law & Held-out normal-force NRMSE $\le15\%$, tangential $\le25\%$, impulse error $\le15\%$, and $\ge20\%$ relative improvement over B0 & Simplify $\eta$, improve excitation, restrict supported operating envelope\\
+G2: physical validity & $<1\%$ friction/passivity violations after hard projection; stable integration over test episodes & Reduce residual magnitude, step size, or contact stiffness; use implicit solve\\
+G3: composition & At 0.5 s, base velocity MAE $\le 0.15$ m/s and roll/pitch MAE $\le3^\circ$, with improvement over B0/B4 & Report simulation composition only; collect targeted multi-contact calibration\\
+G4: perception & Full model beats B2/B3 in leave-one-family-out NLL; 90\% coverage lies in 85--95\% band & Retain high uncertainty; treat vision only as a broad prior\\
+G5: adaptation & Median force/response error drops after $\le5$ contacts without increasing OOD overconfidence & Use direct-cell updates only; remove kernel propagation\\
+G6: global topology & At least 95\% mapped-U escape success and 90\% incrementally revealed-U success, with median path length $\le1.35\times$ known-map optimum & Retain A* on complete maps; restrict unknown-space claim; diagnose SLAM versus planning failure\\
+G7: local planning & $\ge25\%$ reduction in slip/fall/stall events versus deterministic B7 at matched progress, with no more than 20\% runtime penalty & Demonstrate prediction/global-route system; leave physics-aware closed-loop planning as future work\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The exact G0 threshold will be adjusted to the actual sensor specification before data collection. G1--G7 remain frozen once a pilot set establishes feasible normalization and safety bounds.
+
+\subsection{Statistical protocol}
+
+Every final navigation condition uses at least 20 repeated trials per method if simulation-only and at least 8--10 safe repeats per method on hardware, subject to material reset and safety constraints. The global benchmark additionally samples at least 50 U/cul-de-sac geometries with varied opening direction, wall length, partial observability, terrain cost, and localization noise. Method order is randomized; terrain preparation, moisture/compaction, battery state, and ambient light are logged. Continuous metrics use paired bootstrap 95\% confidence intervals over episode differences. Binary success uses Wilson intervals and Fisher's exact/permutation tests. Effect sizes and confidence intervals are reported alongside $p$-values. Multiple primary comparisons use Holm correction. Seeds, failed runs, solver failures, and interventions are included rather than silently discarded.
+
+\subsection{Whole-robot validation under limited access}
+
+The real quadruped validation set is intentionally small and safe:
+\begin{enumerate}
+  \item slow stance load shifts on two adjacent controlled surfaces;
+  \item low-speed straight traversal across a rigid-to-compliant or high-to-low-friction boundary;
+  \item a held-out patch with a conservative stop/fallback policy; and
+  \item repeated contact at one deformable cell to test $s_\xi$; and
+  \item if space permits, low-speed navigation through a lightweight U-shaped barrier while the global route is logged.
+\end{enumerate}
+Motion capture or accurate visual-inertial odometry, joint/IMU logs, and video are collected; foot force sensing is used if available. Without real full-body data, the report will state: ``real single-leg contact validation plus four-leg simulation composition.'' It will not claim a fully validated real quadruped digital twin.
+
+\subsection{Reproducibility package}
+
+The final package will contain sensor calibration, synchronized data schema, train/validation/test episode lists, terrain preparation sheets, configuration files, random seeds, contact plug-in interface, model checkpoints, local/global mapping calibration, U-shape world definitions, simulator version, evaluation scripts, and a one-command representative benchmark. Raw personally identifying imagery is excluded or blurred; laboratory safety and equipment-use rules take precedence over data collection volume.

@@ -1,0 +1,143 @@
+\section{Six-Month Execution Plan}
+\label{sec:execution}
+
+\subsection{Scope tiers}
+
+The project is structured so that a defensible result exists even if a stretch component fails.
+
+\begin{table}[ht]
+\centering
+\caption{Core, target, and stretch scope.}
+\label{tab:scope}
+\begin{tabularx}{\textwidth}{@{}L{25mm}Y Y@{}}
+\toprule
+\textbf{Tier} & \textbf{Included} & \textbf{Result if completed}\\
+\midrule
+Core & Calibrated single-leg dataset; analytical plus residual 3-D contact law; four-leg simulator plug-in; persistent occupancy/elevation map and A*/D* route baseline & A strong physics/learning UGP with a publishable composition question and complete navigation infrastructure\\
+\addlinespace[2pt]
+Target & Registered RGB-D physical field; visual prior; limited online correction; physics-aware MPPI; safe quadruped trials if available & Full hierarchical visuo-proprioceptive digital twin claim\\
+\addlinespace[2pt]
+Stretch & Offline 3DGS rendering; deformable mud state; MPPI on hardware; Fast Marching/anisotropic HJ/NTFields comparison & Expanded real-to-sim and neural-field navigation study\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The ordering is non-negotiable: \textbf{single-leg law $\rightarrow$ four-leg coupling $\rightarrow$ registered local twin $\rightarrow$ persistent global map/D* route $\rightarrow$ online adaptation and local MPPI}. A visually impressive twin or neural time field is not built before the contact interface and transparent global baseline are trustworthy.
+
+\subsection{Week-by-week plan and milestones}
+
+\begin{longtable}{@{}C{16mm}L{39mm}p{88mm}@{}}
+\caption{Detailed 26-week execution plan.}\label{tab:schedule}\\
+\toprule
+\textbf{Weeks} & \textbf{Milestone} & \textbf{Work and exit artifact}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Weeks} & \textbf{Milestone} & \textbf{Work and exit artifact}\\
+\midrule
+\endhead
+1--2 & M0: specification & Freeze coordinate frames, signals, terrain tiers, supported load/speed envelope, safety limits, and evaluation splits. Deliver interface/control document.\\
+3 & M1: calibration & Calibrate camera, rig kinematics, force bias/scale, time synchronization, rigid reference floor, and actuator delay/residual. Pass G0.\\
+4--5 & Pilot data & Run indentation, rate, and tangential pilot. Estimate noise, check force-frame transformation, select D-optimal conditions, and freeze data schema.\\
+6--7 & M2: contact dataset & Collect core surfaces with repetitions; quality-control plots after each session; seal group-wise train/validation/test lists.\\
+8--9 & Analytical ID & Fit $\mu,k,c,\gamma$; compute sensitivity/Fisher spectra; reduce unidentifiable dimensions; implement force-cone projection and passivity diagnostics.\\
+10 & M3: analytical baseline & Held-out report for B0/B1 and failure cases. Decide whether deformable state is justified.\\
+11--12 & Residual and teacher & Train force residual and response GRU; tune only on training/validation; evaluate force, impulse, and short rollouts.\\
+13 & M4: local law gate & Freeze v1 contact law after G1/G2. If missed, restrict operating envelope before continuing.\\
+14--15 & Visual prior & Project frozen DINOv2 features, train geometry encoder and teacher--student posterior, calibrate ensemble, run ambiguity/OOD splits.\\
+16 & M5: perception gate & Complete B2/B3 comparisons and calibration plots; pass G4 or retain vision as broad prior.\\
+17--18 & Four-leg coupling & Integrate four shared contact queries with MuJoCo/robot model; implicit stepping, solver monitoring, and actuator model; run load-shift/gait tests.\\
+19 & M6: composition gate & Compare B0/B4 and ablations; pass G3 for supported horizon. Prepare limited hardware protocol.\\
+20 & Local/global mapping & Build RGB-D height/TSDF local map, registered physical cells, world-frame occupancy/elevation fusion, map uncertainty, and foot query API.\\
+21 & Global route gate & Integrate A*/D* Lite, route-to-subgoal interface, and mapped/incremental U-shape benchmark. Attempt offline 3DGS only if the core schedule is intact.\\
+22 & Online update & Implement Gaussian fusion and bounded sparse kernel memory; test direct-cell update and negative-transfer controls.\\
+23 & M7: adaptation gate & Error-versus-contact curves, memory ablations, update runtime; pass G5.\\
+24 & Local planner integration & MPPI follows D* subgoals using posterior sampling, CVaR cost, hard constraints, and conservative fallback; benchmark runtime.\\
+25 & M8: closed-loop tests & Simulation and limited safe hardware trials; U-shape and terrain-risk baselines, randomized repeats, failure analysis; pass/report G6--G7.\\
+26 & Finalization & Freeze repository/data manifest, compute confidence intervals, make figures/video, write final report and mentor handoff.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Resource and data budget}
+
+\begin{table}[ht]
+\centering
+\caption{Expected resources.}
+\label{tab:resources}
+\begin{tabularx}{\textwidth}{@{}L{31mm}Y Y@{}}
+\toprule
+\textbf{Resource} & \textbf{Minimum} & \textbf{Preferred / use}\\
+\midrule
+Robot setup & Existing single-leg rig/simulator; encoder/current/torque logs & Six-axis foot F/T or force plate; limited quadruped access\\
+Terrain & Four small repeatable patches & Incline fixture, moisture/compaction measurement, optional mud/organic test\\
+Vision & Calibrated RGB camera & RGB-D or depth camera; multi-view capture for 3DGS\\
+Compute & One modern GPU with 16 GB VRAM; 16 CPU cores & 24 GB GPU or batched simulator node\\
+Storage & 300 GB for synchronized logs and models & 0.5--1 TB if retaining raw multi-view/3DGS data\\
+Software & ROS/ROS2, Python, PyTorch, MuJoCo, OpenCV/Open3D & Isaac Lab for batched rollouts; COLMAP/3DGS implementation\\
+People/time & One student plus weekly mentor checkpoint & Lab support for sensor mounting and safe robot trials\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The project does not require repeated uncontrolled full-quadruped mud trials. Most data come from the one-leg setup and small resettable patches; whole-robot trials are validation, not the main training source.
+
+\subsection{Risk register}
+
+\begin{longtable}{@{}L{31mm}C{14mm}C{14mm}L{74mm}@{}}
+\caption{Technical risks and planned controls.}\label{tab:risks}\\
+\toprule
+\textbf{Risk} & \shortstack{\textbf{Like-}\\\textbf{lihood}} & \textbf{Impact} & \textbf{Mitigation and trigger}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Risk} & \shortstack{\textbf{Like-}\\\textbf{lihood}} & \textbf{Impact} & \textbf{Mitigation and trigger}\\
+\midrule
+\endhead
+No reliable foot force label & Medium & High & Prefer force plate/F/T sensor. Validate inverse dynamics on rigid trials; if tangential force is unreliable, narrow claims to normal response/impulse.\\
+Contact parameters unidentifiable & Medium & High & Inspect Fisher spectrum; add rate/load/direction excitation; reduce $\eta$ rather than fitting unstable constants.\\
+Single-leg law does not transfer & Medium & High & Cover expected load/impact envelope; separate actuator calibration; evaluate composition before visual twin; collect a small targeted multi-contact correction set.\\
+Stiff learned contact destabilizes integration & Medium & High & Positive bounded parameters, friction projection, residual regularization, semi-implicit solve, adaptive step and non-convergence flag.\\
+Visual shortcut/terrain memorization & High & Medium & Grouped splits, appearance--physics counterexamples, frozen backbone, geometry ablation, OOD calibration.\\
+Registration error appears as physics error & Medium & High & Independent marker/touchdown benchmark; propagate map covariance; no model training until registration gate is met.\\
+Local planner becomes trapped in concave obstacles & Medium & High & Persistent world-frame occupancy map, D* Lite route, U-shape benchmark, and explicit unknown-space policy.\\
+Mud/granular trials are not repeatable & High & Medium & Begin with rigid/compliant/controlled granular surfaces; log preparation; treat natural terrain as external validation.\\
+Online update causes negative transfer & Medium & High & Fixed-budget local memory, variance floor, capped spatial propagation, direct-cell fallback, rollback of last update.\\
+Planner misses real-time budget & Medium & Medium & Cached cell features, low-dimensional actions, vectorized rollouts, shorter horizon, distilled surrogate with elite physical recheck.\\
+Insufficient quadruped access & Medium & Medium & Predeclare two claim levels; deliver real single-leg plus four-leg simulation study if hardware validation is unavailable.\\
+Safety event & Low & High & Tether/gantry where appropriate, speed/tilt/torque limits, protected test zone, independent E-stop, supervised trials, conservative fallback.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Weekly mentor decision dashboard}
+
+Each weekly meeting reports one page with: (i) milestone status, (ii) one primary quantitative plot, (iii) failed conditions and cause, (iv) data volume/quality, (v) next week's acceptance test, and (vi) decisions required from the mentor. This prevents the project from drifting toward photorealistic demos before the contact claim is proven.
+
+\subsection{Final deliverables}
+
+\begin{enumerate}
+  \item calibrated synchronized single-leg terrain-interaction dataset and preparation protocol;
+  \item analytical and residual contact model with uncertainty and recurrent state;
+  \item four-leg dynamics integration plug-in and validation benchmark;
+  \item registered visual--geometry--physical local map, with optional 3DGS reconstruction;
+  \item persistent global occupancy/elevation/physical map with A*/D* route and U-shape benchmark;
+  \item visual prior, response teacher, and bounded online update module;
+  \item uncertainty-aware MPPI demonstration following global subgoals, with baseline/ablation suite;
+  \item reproducible code, configurations, checkpoints, videos, and final report; and
+  \item a concise statement of passed/failed hypotheses and the exact supported operating envelope.
+\end{enumerate}
+
+\section{Expected Scientific Outcome and Decision Case}
+\label{sec:decision}
+
+The proposal is ambitious in integration but conservative in scientific sequencing. It reuses mature components where novelty is unnecessary: a frozen visual foundation encoder, standard multibody equations, an existing low-level locomotion controller, and MPPI. Research effort is concentrated at the unresolved interface: learning a real, state-dependent, uncertain contact response from controlled interaction and proving that it composes.
+
+The project remains successful at several levels. At minimum it can produce a careful single-leg contact benchmark, compositional simulator study, and transparent global map/D* navigation baseline. With the target modules, it becomes a pre-contact visual physical prior corrected by real response and followed by local risk-aware control. Neural time fields remain an optional representation comparison. Every level has explicit baselines and stop criteria, so negative results remain interpretable.
+
+\begin{claimbox}[Recommended UGP formulation]
+\textbf{Title:} Online Visuo-Proprioceptive Contact-Response Fields for Physically Coupled Quadruped Digital Twins.\\[1mm]
+\textbf{Core claim to approve:} A local foot--terrain interaction law learned from controlled real trials can be visually indexed, uncertainty-calibrated, and composed through four-contact rigid-body dynamics to improve prediction of action-conditioned quadruped response.\\[1mm]
+\textbf{Core deliverable at six months:} a validated single-leg contact model, four-leg coupled simulator, registered local physical field, persistent global map/D* route layer, and rigorous comparison against local-only, uniform, visual-parameter, and black-box forward-dynamics baselines.\\[1mm]
+\textbf{Stretch deliverable:} online correction, physics-aware closed-loop hardware navigation, photorealistic reconstruction, and neural time-field comparison.
+\end{claimbox}
+
+This formulation is sufficiently focused for a six-month undergraduate project, technically deep enough to support a research contribution, and modular enough to survive hardware or reconstruction delays without losing its central scientific question.

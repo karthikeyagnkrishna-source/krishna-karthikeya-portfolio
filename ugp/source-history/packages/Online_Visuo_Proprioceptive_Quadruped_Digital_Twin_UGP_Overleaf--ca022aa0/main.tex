@@ -1,0 +1,177 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[a4paper,top=22mm,bottom=24mm,left=22mm,right=22mm,headheight=15pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,bm,mathtools}
+\usepackage{booktabs,tabularx,longtable,array,multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,shapes.geometric,backgrounds}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{caption,subcaption}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\definecolor{navy}{HTML}{15324A}
+\definecolor{blue}{HTML}{1E6A8D}
+\definecolor{cyan}{HTML}{58AFC4}
+\definecolor{teal}{HTML}{24837B}
+\definecolor{orange}{HTML}{D47A32}
+\definecolor{red}{HTML}{B94B50}
+\definecolor{ink}{HTML}{263238}
+\definecolor{muted}{HTML}{60747D}
+\definecolor{paper}{HTML}{F5F8F9}
+\definecolor{pale}{HTML}{EAF2F5}
+\definecolor{greenpale}{HTML}{E8F3EE}
+\definecolor{orangepale}{HTML}{FAEFE5}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=navy,
+  citecolor=teal,
+  urlcolor=blue,
+  pdftitle={Online Visuo-Proprioceptive Contact-Response Fields for Physically Coupled Quadruped Digital Twins},
+  pdfauthor={Krishna Karthikeya G. N.}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{muted}UGP Research Proposal}
+\fancyhead[R]{\small\color{muted}Visuo-Proprioceptive Contact-Response Fields}
+\fancyfoot[C]{\small\color{muted}\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{navy}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{ink}}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{2.0ex plus 0.5ex}{0.8ex}
+\titlespacing*{\subsection}{0pt}{1.5ex plus 0.4ex}{0.6ex}
+\setlist{nosep,leftmargin=1.6em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\V}{\mathbb{V}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\C}{\mathcal{C}}
+\newcommand{\D}{\mathcal{D}}
+\newcommand{\T}{\mathcal{T}}
+\newcommand{\Lcal}{\mathcal{L}}
+\newcommand{\etal}{\textit{et al.}}
+\newcommand{\risk}{\operatorname{CVaR}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\proj}{\operatorname{proj}}
+\newcommand{\softplus}{\operatorname{softplus}}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\tcbset{
+  enhanced,
+  boxrule=0.6pt,
+  arc=2mm,
+  left=2.2mm,right=2.2mm,top=1.5mm,bottom=1.5mm,
+  before skip=7pt,after skip=7pt
+}
+\newtcolorbox{keybox}[1][]{colback=pale,colframe=blue,title=#1,fonttitle=\bfseries\color{navy}}
+\newtcolorbox{claimbox}[1][]{colback=greenpale,colframe=teal,title=#1,fonttitle=\bfseries\color{navy}}
+\newtcolorbox{warningbox}[1][]{colback=orangepale,colframe=orange,title=#1,fonttitle=\bfseries\color{navy}}
+
+\tikzset{
+  block/.style={draw=blue,rounded corners=2mm,fill=pale,thick,align=center,minimum height=9mm,text width=31mm,font=\small},
+  physics/.style={draw=teal,rounded corners=2mm,fill=greenpale,thick,align=center,minimum height=9mm,text width=34mm,font=\small},
+  decision/.style={draw=orange,rounded corners=2mm,fill=orangepale,thick,align=center,minimum height=9mm,text width=34mm,font=\small},
+  arrow/.style={-{Latex[length=2.2mm]},thick,draw=muted},
+  feedback/.style={-{Latex[length=2.2mm]},thick,dashed,draw=orange}
+}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[paper] (current page.south west) rectangle (current page.north east);
+  \fill[navy] (current page.north west) rectangle ([yshift=-104mm]current page.north east);
+  \fill[cyan] ([yshift=-104mm]current page.north west) rectangle ([yshift=-107mm]current page.north east);
+  \draw[teal,line width=1.2pt] ([xshift=22mm,yshift=23mm]current page.south west) -- ([xshift=-22mm,yshift=23mm]current page.south east);
+\end{tikzpicture}
+
+\vspace*{10mm}
+{\Large\color{cyan}\bfseries UNDERGRADUATE PROJECT PROPOSAL\par}
+\vspace{10mm}
+{\fontsize{27}{32}\selectfont\color{white}\bfseries
+Online Visuo-Proprioceptive\\[2mm]
+Contact-Response Fields\par}
+\vspace{4mm}
+{\Large\color{white}
+for Physically Coupled Quadruped Digital Twins\par}
+
+\vspace{28mm}
+\begin{tcolorbox}[colback=paper,colframe=blue,width=\textwidth,boxrule=0.9pt,arc=3mm]
+\textbf{Research objective.} Learn a local, uncertainty-aware foot--terrain interaction law from controlled single-leg experiments; attach it to a registered terrain twin; fuse local observations into a persistent world map; compose four shared contact laws through floating-base dynamics; and select globally valid, locally safe actions before the quadruped reaches unseen terrain.
+\end{tcolorbox}
+
+\vfill
+\begin{tabularx}{\textwidth}{@{}lY@{}}
+\textbf{Prepared by} & Krishna Karthikeya G. N.\\
+\textbf{Roll number} & 250564\\
+\textbf{Document type} & Detailed six-month UGP research and execution plan\\
+\textbf{Prepared for} & Mentor review and project approval\\
+\textbf{Date} & August 2026\\
+\end{tabularx}
+
+\vspace{14mm}
+{\small\color{muted}
+Scope discipline: the core contribution is the learned contact law and its validated composition. Photorealistic reconstruction, online adaptation, and risk-aware planning are built around that core in staged, falsifiable increments.\par}
+\end{titlepage}
+
+\hypersetup{pageanchor=true}
+\pagenumbering{roman}
+
+\begin{abstract}
+Quadruped navigation systems can often recognize terrain appearance or learn an end-to-end forward model, yet they rarely expose a physically composable account of what each foot will experience. This proposal develops an \emph{online visuo-proprioceptive contact-response field}: a spatial field whose visual and geometric observations index a probabilistic local foot--terrain law, rather than a terrain label or a single nominal friction coefficient. The law predicts three-dimensional ground-reaction force from foot state, penetration, slip velocity, commanded loading, and recurrent terrain state. Four shared copies are coupled through standard floating-base multibody dynamics, producing whole-body motion under candidate control sequences. A photorealistic renderer and a collision/height representation are registered in the same world frame so that a future foothold queries the correct appearance, geometry, contact posterior, and uncertainty. Local observations are fused into a persistent occupancy--geometry--physical map; A*/D* Lite supplies a globally valid route around concave obstacles, while local MPPI evaluates short-horizon physical safety. Once a foothold is touched, proprioceptive and force evidence update only its low-dimensional physical posterior and a sparse residual memory; the visual backbone is not fine-tuned online.
+
+The project is deliberately staged. Real measurements first validate the single-leg law; only then is four-leg composition evaluated in simulation and, subject to access, with limited safe whole-body trials. The planner uses uncertainty-sampled model-predictive path integral control and a risk-sensitive cost. The central hypothesis is falsifiable: a locally learned contact law, trained over the quadruped operating envelope and separated from actuator error, should predict unseen full-body response better than uniform-contact simulation, visual-only parameter prediction, or black-box forward dynamics, while providing calibrated uncertainty. The document specifies equations, instrumentation, dataset design, neural architecture, training losses, online Bayesian fusion, simulator integration, planning, baselines, ablations, acceptance criteria, risks, deliverables, and a 26-week execution schedule.
+\end{abstract}
+
+\begin{keybox}[One-sentence thesis]
+\textbf{Appearance plus geometry predicts a distribution over local contact dynamics; rigid-body mechanics composes those dynamics into action-conditioned whole-body response; real contact closes the loop by correcting the local posterior.}
+\end{keybox}
+
+\tableofcontents
+\clearpage
+\listoffigures
+\listoftables
+\clearpage
+
+\pagenumbering{arabic}
+
+\input{sections/problem}
+\input{sections/physics}
+\input{sections/learning}
+\input{sections/twin_planning}
+\input{sections/evaluation}
+\input{sections/execution}
+
+\appendix
+\input{sections/appendix}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

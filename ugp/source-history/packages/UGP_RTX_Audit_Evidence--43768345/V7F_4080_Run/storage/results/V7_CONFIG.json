@@ -1,0 +1,38 @@
+{
+  "SEED": 781,
+  "CONTACT_THRESHOLD": 10.0,
+  "TRAIN_LOOKBACK_SEC": 20.0,
+  "SHORT_CONTEXT_SEC": 0.5,
+  "SHORT_HOP_SEC": 0.3,
+  "SHORT_HORIZONS": [
+    0.1
+  ],
+  "LONG_CONTEXT_SEC": 4.0,
+  "LONG_HOP_SEC": 1.0,
+  "LONG_HORIZONS": [
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "PRIOR_EPOCHS_SHORT": 3,
+  "PRIOR_EPOCHS_LONG": 4,
+  "LOCAL_EPOCHS_SHORT": 4,
+  "LOCAL_EPOCHS_LONG": 4,
+  "LR_PRIOR": 0.0002,
+  "LR_LOCAL": 8e-05,
+  "DINO_MODEL": "hf_hub:timm/vit_large_patch16_dinov3.lvd1689m",
+  "CONV_MODEL": "hf_hub:timm/convnext_large.dinov3_lvd1689m",
+  "VISION_INPUT": 448,
+  "RAW_GRID": 8,
+  "LATENTS_PER_BRANCH": 16,
+  "VIS_DIM": 256,
+  "FLOW_HISTORY": 4,
+  "POINTS_PER_FRAME": 4096,
+  "PI_PHYS_DIM": 47
+}

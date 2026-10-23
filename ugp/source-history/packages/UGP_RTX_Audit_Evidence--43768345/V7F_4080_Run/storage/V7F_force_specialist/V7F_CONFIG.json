@@ -1,0 +1,14 @@
+{
+  "global_hop_short": 0.15,
+  "global_hop_long": 0.25,
+  "batch_short": 16,
+  "batch_long": 8,
+  "epochs_short": 5,
+  "epochs_long": 6,
+  "lr_global": 0.0003,
+  "lr_local": 6e-05,
+  "local_epochs": 5,
+  "local_val_frac": 0.2,
+  "architecture": "frozen V7 trunk + joint-horizon phase-MoE force specialist + direct/magnitude-direction fusion",
+  "note": "No V5 test prediction used for training; V5 is evaluation reference only."
+}

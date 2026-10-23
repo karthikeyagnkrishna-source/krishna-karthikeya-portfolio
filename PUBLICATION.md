@@ -1,7 +1,11 @@
-# Publication boundary
+# Public source release
 
-This repository is deliberately a selective public portfolio, not a complete backup. Excluded material includes credentials and machine-specific access details; raw RGB-D/robot and legal datasets; checkpoints; generated hidden-test predictions; assignment solution notebooks; official course graders; and shared source of uncertain redistribution rights. The retained CSVs and pilot JSON files are aggregate research results.
+At the owner's request, the repository now publishes the complete UGP source collection found in the audited local project folders, historical notebooks, source archives, and saved server snapshots. This includes **981 source/configuration/document files**, **137 notebook variants**, and their code-cell exports. See the [full index](ugp/source-history/README.md) and [manifest](ugp/source-history/SOURCE_MANIFEST.json) for exact coverage.
 
-The two included UGP notebooks were transformed for publication by removing outputs/execution state and redacting local or RTX identifiers. They have not been rerun after that transformation. They are research snapshots, not turnkey training packages. Dependencies on pretrained DINOv3, ConvNeXt, Utonia/PTv3, and WAFT components must be obtained under their own licenses.
+CS781 code remains excluded. Credentials, private keys, personal contact details, machine-specific SSH/path values, raw datasets, learned weights, and cached feature data are excluded or redacted. Installed environments and upstream dependency checkouts are excluded from the source collection; obtain them from their original owners under their licenses. No blanket license or sole-authorship claim is applied to shared inputs.
 
-Before adding files, review copyright, course rules, third-party model and dataset licenses, credentials, private paths, personal information, and whether a result is from familiar diagnostics, a strict holdout, a pilot, or a proposal. A file appearing in an archive is not proof it may be publicly redistributed.
+Original and modified terrain-model handoffs are now public as source snapshots. Their provenance remains explicit: supplied design, local implementation, and historical causal-pilot revisions. Availability of code does not establish completed training or a validated physical model.
+
+Notebook outputs, attachments, metadata and execution state are removed. Original executed-cell and error-output counts are retained as metadata in the manifest. Source logic is preserved apart from credential removal and replacement of machine-specific paths with `/path/to/ugp/...`. These placeholders require configuration, and historical dependencies may require their original Python/CUDA environment.
+
+The RTX host was unreachable during this pass. This release makes no claim to include code that exists only on that inaccessible server. The full source collection has not been retrained or evaluated by this publication step.

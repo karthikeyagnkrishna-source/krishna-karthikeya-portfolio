@@ -1,0 +1,126 @@
+{
+  "R_C_B": [
+    [
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      1
+    ]
+  ],
+  "calibration_trajectory_id": "REPLACE; must not be a model train/val/test trajectory",
+  "camera_intrinsics": {
+    "lcam_back": {
+      "cx": 320.0,
+      "cy": 320.0,
+      "depth_sigma_a_m": 0.002,
+      "depth_sigma_b_per_m": 0.001,
+      "fx": 320.0,
+      "fy": 320.0,
+      "height": 640,
+      "source": "REPLACE",
+      "verified": false,
+      "width": 640
+    },
+    "lcam_bottom": {
+      "cx": 320.0,
+      "cy": 320.0,
+      "depth_sigma_a_m": 0.002,
+      "depth_sigma_b_per_m": 0.001,
+      "fx": 320.0,
+      "fy": 320.0,
+      "height": 640,
+      "source": "REPLACE",
+      "verified": false,
+      "width": 640
+    },
+    "lcam_front": {
+      "cx": 320.0,
+      "cy": 320.0,
+      "depth_sigma_a_m": 0.002,
+      "depth_sigma_b_per_m": 0.001,
+      "fx": 320.0,
+      "fy": 320.0,
+      "height": 640,
+      "source": "REPLACE",
+      "verified": false,
+      "width": 640
+    },
+    "lcam_left": {
+      "cx": 320.0,
+      "cy": 320.0,
+      "depth_sigma_a_m": 0.002,
+      "depth_sigma_b_per_m": 0.001,
+      "fx": 320.0,
+      "fy": 320.0,
+      "height": 640,
+      "source": "REPLACE",
+      "verified": false,
+      "width": 640
+    },
+    "lcam_right": {
+      "cx": 320.0,
+      "cy": 320.0,
+      "depth_sigma_a_m": 0.002,
+      "depth_sigma_b_per_m": 0.001,
+      "fx": 320.0,
+      "fy": 320.0,
+      "height": 640,
+      "source": "REPLACE",
+      "verified": false,
+      "width": 640
+    },
+    "lcam_top": {
+      "cx": 320.0,
+      "cy": 320.0,
+      "depth_sigma_a_m": 0.002,
+      "depth_sigma_b_per_m": 0.001,
+      "fx": 320.0,
+      "fy": 320.0,
+      "height": 640,
+      "source": "REPLACE",
+      "verified": false,
+      "width": 640
+    }
+  },
+  "evidence": "REPLACE_WITH_AUDITABLE_REFERENCE",
+  "foot_frame_names": {
+    "FL": "REPLACE",
+    "FR": "REPLACE",
+    "RL": "REPLACE",
+    "RR": "REPLACE"
+  },
+  "joint_names": {
+    "LF_HAA": "LF_HAA",
+    "LF_HFE": "LF_HFE",
+    "LF_KFE": "LF_KFE",
+    "LH_HAA": "LH_HAA",
+    "LH_HFE": "LH_HFE",
+    "LH_KFE": "LH_KFE",
+    "RF_HAA": "RF_HAA",
+    "RF_HFE": "RF_HFE",
+    "RF_KFE": "RF_KFE",
+    "RH_HAA": "RH_HAA",
+    "RH_HFE": "RH_HFE",
+    "RH_KFE": "RH_KFE"
+  },
+  "rotation_convention": "p_C = R_C_B @ p_B + t_C_B",
+  "schema": "V10R_CALIBRATION_CONTRACT_V1",
+  "source": "official transform or independent calibration trajectory excluded from every model split",
+  "t_C_B_m": [
+    0,
+    0,
+    0
+  ],
+  "urdf_path": "REPLACE_WITH_ABSOLUTE_COLAB_PATH",
+  "urdf_sha256": "REPLACE",
+  "verified": false
+}

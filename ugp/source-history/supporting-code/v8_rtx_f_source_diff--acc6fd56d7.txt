@@ -1,0 +1,17 @@
+--- reference_cell22
+
++++ deployed_cell21
+
+@@ -121,9 +121,10 @@
+
+ voi_rows=[]
+ if len(v8e_candidates):
+     for keys,g in v8e_candidates.groupby(['terrain_type','test_index','ttest','leg','horizon_s']):
+-        g=g.copy().sort_values('score'); safest=g.iloc[0]
++        g=g.copy().sort_values('score')
+         # Approximate information gain from predictive uncertainty, map age, and low observation confidence.
+         g['info_gain']=0.5*np.log1p((g['unc_norm'].clip(lower=0)/15.0)**2)*(1.0+g['map_age_s'].clip(0,5)/5.0)
++        safest=g.iloc[0]
+         # Safe exploration gate: never explore a candidate much riskier than the current safest one.
+         safe=g[g['score']<=float(safest.score)*1.12+0.02].copy()
+         safe['active_score']=safe['score']-V8F_INFO_LAMBDA*safe['info_gain']

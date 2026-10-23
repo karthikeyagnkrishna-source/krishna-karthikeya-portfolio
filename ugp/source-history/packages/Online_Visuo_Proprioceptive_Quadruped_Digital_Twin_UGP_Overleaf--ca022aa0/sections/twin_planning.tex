@@ -1,0 +1,143 @@
+\section{Registered Local Digital Twin and Online Adaptation}
+\label{sec:twin}
+
+\subsection{A twin has aligned visual, geometric, and physical layers}
+
+The local twin is
+\begin{equation}
+\M_t=\left\{\mathcal G_{\mathrm{render}},\ \T_{\mathrm{mesh/height}},\ 
+\mathcal F_t:\xi\mapsto(z_\xi,g_\xi,\mu_\xi,\Sigma_\xi,\ell_\xi,s_{\xi},t_{\mathrm{last}})\right\}.
+\label{eq:twin}
+\end{equation}
+The renderer and collision representation are distinct but share a calibrated world frame. This is the important lesson from recent visual--physical real-to-sim systems: a 3-D Gaussian Splatting (3DGS) reconstruction provides appearance, while a mesh, signed-distance field, or height map provides collision and contact geometry \citep{kerbl20233dgs,chen2026quadverse,han2025re3sim}. Photorealism alone cannot supply stable normals or contact penetration.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[node distance=8mm and 12mm]
+  \node[block,text width=36mm] (raw) {Calibrated RGB-D / multi-view RGB, poses, proprioception};
+  \node[block,right=of raw,text width=37mm] (frames) {World registration\\$T_C^W$, odometry, markers/ICP};
+  \node[block,right=of frames,text width=38mm] (render) {Visual layer\\online RGB-D features; offline 3DGS};
+  \node[block,below=of render,text width=38mm] (geom) {Geometry layer\\TSDF/mesh/height, normal, roughness};
+  \node[physics,left=of geom,text width=37mm] (phys) {Physical field\\$q(\eta_\xi,\ell_\xi)$, $s_\xi$, age};
+  \node[decision,left=of phys,text width=36mm] (query) {Foot query at $\xi$\\interpolated aligned tuple};
+  \draw[arrow] (raw) -- (frames);
+  \draw[arrow] (frames) -- (render);
+  \draw[arrow] (frames) |- (geom);
+  \draw[arrow] (render) -- (geom);
+  \draw[arrow] (geom) -- (phys);
+  \draw[arrow] (phys) -- (query);
+  \draw[feedback] (query.north) .. controls +(0,9mm) and +(0,-9mm) .. node[above,font=\scriptsize]{real contact update} (raw.south);
+\end{tikzpicture}
+\caption{Registered twin layers. A location is useful only when its rendered appearance, collision geometry, and physical posterior refer to the same terrain point.}
+\label{fig:twin_layers}
+\end{figure}
+
+Two implementations control scope:
+\begin{itemize}
+  \item \textbf{fast online twin (core):} an RGB-D local height map/TSDF at 2--5 cm resolution with dense image features projected into cells. It supports contact queries and planning at runtime;
+  \item \textbf{slow photorealistic twin (secondary):} an offline geometry-constrained 3DGS reconstruction from multi-view data, aligned with a collision mesh. It supports replay, camera-view augmentation, and qualitative real-to-sim evaluation, as in GaussGym/QuadVerse-style pipelines \citep{escontrela2025gaussgym,chen2026quadverse}.
+\end{itemize}
+The planner does not render images inside every rollout unless a visual policy is explicitly being tested. It queries cached cell features and contact posteriors; rendering is therefore not on the critical control path.
+
+\subsection{Registration and map construction}
+
+Camera intrinsics are calibrated once. Extrinsics $T_C^B$ are estimated with a target rigidly attached to the robot/rig, and world poses $T_B^W(t)$ come from odometry or motion capture. For a depth pixel $u$ with depth $d(u)$,
+\begin{equation}
+p^W=T_B^W(t)T_C^B\,d(u)K^{-1}\bar u,
+\label{eq:backproject}
+\end{equation}
+which is fused into the geometric map. Dense visual tokens are bilinearly sampled at $u$ and accumulated in the same cell with view-angle, depth, and recency weights. The normal is estimated from local geometry; roughness and curvature use a small neighborhood but are computed at a scale no smaller than sensor noise.
+
+Registration is validated independently of learning using known markers/edges and foot touchdown locations. The acceptance target is median terrain-point reprojection error below one map cell and touchdown-to-surface discrepancy below the foot-radius fraction relevant to the contact model. Uncertainty $\Sigma_\xi^{\mathrm{map}}$ increases with pose covariance, oblique viewing, sparse coverage, and map age.
+
+\subsection{Online update after real contact}
+
+When foot $i$ leaves cell $\xi$, the system packages a contact episode $e_\xi$ containing pre-contact prior, foot state/action history, measured force or inverse-dynamics force, and resulting motion. The response encoder gives $(\mu_p,\Sigma_p)$; \cref{eq:gaussian_fusion} updates the physical posterior. The residual between predicted and observed response,
+\begin{equation}
+e_\xi=\begin{bmatrix}f^{\mathrm{real}}-\hat f\\
+\nu_{t+1:t+K}^{\mathrm{real}}-\hat\nu_{t+1:t+K}\end{bmatrix},
+\label{eq:online_residual}
+\end{equation}
+is stored in a bounded memory. Nearby uncontacted cells receive a conservative correction through a kernel over spatial, visual, and geometric similarity:
+\begin{align}
+\kappa(\xi,\xi') &=
+\exp\!\left[-\frac{\lVert x_\xi-x_{\xi'}\rVert^2}{2l_x^2}
+-\frac{\lVert z_\xi-z_{\xi'}\rVert^2}{2l_z^2}
+-\frac{\lVert g_\xi-g_{\xi'}\rVert^2}{2l_g^2}\right],\\
+\Delta\mu_{\xi'} &= k_{\xi'}^\top(K+\sigma_e^2I)^{-1}e,
+\label{eq:kernel_update}
+\end{align}
+implemented either as a sparse Gaussian process or a fixed-budget kernel dictionary. Propagation is capped, decays with distance/time, and cannot reduce variance below a calibrated floor without direct contact. This prevents a single surprising patch from rewriting an entire visually similar region.
+
+The deployment update therefore changes only $\mu_\xi,\Sigma_\xi,\ell_\xi,s_\xi$ and the sparse memory. The DINOv2 backbone and contact network are frozen. Periodic offline retraining may incorporate accepted episodes after review, but it is not part of the real-time loop.
+
+\begin{keybox}[Online update rule in plain language]
+Before touch, trust appearance only as much as training and OOD evidence justify. After touch, let force and motion correct the contacted cell. Share that correction only with nearby cells that are similar in position, appearance, and geometry, and retain uncertainty where evidence is weak.
+\end{keybox}
+
+\input{sections/global_mapping}
+
+\section{Action-Conditioned Prediction and Risk-Aware Planning}
+\label{sec:planning}
+
+\subsection{Control hierarchy and candidate actions}
+
+The low-level locomotion controller remains fixed. The local planner searches a short sequence of high-level commands
+\begin{equation}
+u_t=[v_x^{\mathrm{cmd}},v_y^{\mathrm{cmd}},\omega_z^{\mathrm{cmd}}]
+\label{eq:action}
+\end{equation}
+at 5--10 Hz over a 1.5--2.0 s horizon. Optional gait frequency or body-height offsets are added only after the three-dimensional command space is stable. For every candidate sequence, contact parameters are sampled from the map posterior and the coupled equations are rolled out. The predicted observables include progress, tracking error, base roll/pitch, support margin, slip velocity/distance, normal impulse, sinkage, foot collision, torque, and energy.
+
+\subsection{Risk-sensitive objective}
+
+For candidate $U$, sampled terrain/contact realization $m$, and rollout cost $J^{(m)}(U)$,
+\begin{align}
+J^{(m)}(U)&=\sum_{k=0}^{H-1}\Big[
+w_g\lVert p_k-p_k^{\mathrm{ref}}\rVert^2
++w_v\lVert v_k-v_k^{\mathrm{cmd}}\rVert^2
++w_o\lVert\operatorname{Log}(R_k^{\mathrm{ref}\top}R_k)\rVert^2 \\
+&\qquad+w_s\sum_i\lVert v_{t,i}\rVert^2\mathbf1_{c_i}
++w_\delta\sum_i\delta_i^2
++w_\tau\lVert\tau_k\rVert^2
++w_c\,\mathbf1_{\mathrm{collision}}
++w_u\operatorname{tr}(\Sigma_{R,k})\Big]+c_T,\\
+J_{\mathrm{risk}}(U)&=\E_m[J^{(m)}(U)]
++\beta\,\risk_\alpha(J^{(m)}(U)).
+\label{eq:risk_cost}
+\end{align}
+CVaR focuses the planner on the worst plausible posterior samples, a useful property for uncertain terrain \citep{rockafellar2000cvar,cai2024pietra}. Hard rejection constraints apply when predicted roll/pitch, base collision, sinkage, slip, joint limits, or solver non-convergence exceed safe thresholds.
+
+\subsection{MPPI update}
+
+Model Predictive Path Integral control samples perturbations around a nominal command sequence \citep{williams2018mppi}:
+\begin{align}
+U^{(m)}&=\bar U+\epsilon^{(m)},\qquad \epsilon^{(m)}\sim\N(0,\Sigma_U),\\
+w_m&=\frac{\exp[-(J_{\mathrm{risk}}^{(m)}-J_{\min})/\lambda]}{\sum_j\exp[-(J_{\mathrm{risk}}^{(j)}-J_{\min})/\lambda]},\\
+\bar U&\leftarrow \bar U+\sum_m w_m\epsilon^{(m)}.
+\label{eq:mppi}
+\end{align}
+After two to five iterations, only the first command is executed; the horizon shifts and replans with new measurements. A realistic starting budget is 512--2048 candidate rollouts, 8--16 posterior samples shared through common random numbers, and vectorized integration. If full contact rollouts miss the runtime budget, a GRU surrogate is distilled from the validated simulator for planning speed, but its predictions are screened against the physical model on a smaller elite set.
+
+\subsection{Runtime and safety fallback}
+
+The target timing hierarchy is:
+\begin{table}[ht]
+\centering
+\caption{Runtime targets and degradation strategy.}
+\label{tab:runtime}
+\begin{tabularx}{\textwidth}{@{}L{35mm}L{30mm}Y@{}}
+\toprule
+\textbf{Module} & \textbf{Target} & \textbf{If the budget is missed}\\
+\midrule
+Low-level controller & 200--500 Hz & Never slowed by perception/planning\\
+Contact/dynamics integration & 200--500 Hz internal step & Fewer candidate actions; cached features; compiled/batched model\\
+Local map update & 10--20 Hz & Coarser cells and asynchronous feature projection\\
+Persistent map / D* update & 1--5 Hz or event-driven & Coarser global grid; incremental affected-cell replanning\\
+MPPI replanning & 5--10 Hz & Shorter horizon, fewer samples, distilled surrogate plus elite recheck\\
+Photorealistic reconstruction & offline & No impact on control loop\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+When all candidate trajectories violate constraints or OOD uncertainty exceeds a threshold, the robot does not extrapolate aggressively. It switches to a conservative command envelope: reduce speed, shorten step, stop before the uncertain patch, or request a low-load exploratory touch if the controller supports it. Emergency stops and joint/tilt limits remain outside the learned system.

@@ -1,0 +1,3 @@
+numpy>=1.24
+# Install a compatible PyTorch 2.x CUDA build separately on your RTX 4080 server.
+torch>=2.2

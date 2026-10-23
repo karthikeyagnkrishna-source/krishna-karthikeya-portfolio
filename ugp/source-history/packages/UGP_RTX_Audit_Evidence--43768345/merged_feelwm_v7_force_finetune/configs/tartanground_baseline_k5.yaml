@@ -1,0 +1,37 @@
+model:
+  world_d_model: 800
+  world_heads: 10
+  world_layers: 8
+  world_ffn_ratio: 7
+  use_leg_pretransformers: false
+
+train:
+  train_manifest: /path/to/ugp/merged_feelwm_v7_runs/tartanground_k1_k5_leg_compare/prepared/train_k5.jsonl
+  val_manifest: /path/to/ugp/merged_feelwm_v7_runs/tartanground_k1_k5_leg_compare/prepared/dev_k5.jsonl
+  output_dir: /path/to/ugp/merged_feelwm_v7_runs/tartanground_k1_k5_leg_compare_10ep_test10/baseline/k5
+  indexed_data: true
+  init_weights_only: /path/to/ugp/merged_feelwm_v7_runs/tartanground_k1_k5_leg_compare_10ep_test10/baseline/k1/checkpoints/best.pt
+  teacher_forcing: true
+  horizon_lambdas: [0.2, 0.2, 0.2, 0.2, 0.2]
+  seed: 781
+  epochs: 10
+  max_steps: null
+  batch_size: 1
+  grad_accum_steps: 8
+  num_workers: 0
+  pin_memory: true
+  persistent_workers: false
+  lr: 0.0002
+  min_lr_ratio: 0.05
+  weight_decay: 0.05
+  warmup_steps: 10
+  grad_clip: 1.0
+  amp_dtype: bf16
+  tf32: true
+  compile: false
+  log_every: 1
+  val_every_steps: 25
+  checkpoint_every_steps: 25
+  keep_last_checkpoints: 2
+  resume: auto
+  history_shift_samples: 10

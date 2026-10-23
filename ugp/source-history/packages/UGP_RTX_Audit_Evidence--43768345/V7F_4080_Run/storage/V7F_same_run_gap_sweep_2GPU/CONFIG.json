@@ -1,0 +1,64 @@
+{
+  "experiment": "2-GPU same-run temporal-gap sweep",
+  "gpus": [
+    "NVIDIA GeForce RTX 4080",
+    "NVIDIA GeForce RTX 4080"
+  ],
+  "original_runs": [
+    {
+      "terrain_type": "forest",
+      "environment": "ForestEnv",
+      "run": "P2000"
+    },
+    {
+      "terrain_type": "swamp_marsh",
+      "environment": "GreatMarsh",
+      "run": "P2023"
+    },
+    {
+      "terrain_type": "rough_uneven",
+      "environment": "SeasonalForestWinter",
+      "run": "P2000"
+    },
+    {
+      "terrain_type": "wet_uneven_proxy",
+      "environment": "OldTownFall",
+      "run": "P2000"
+    }
+  ],
+  "original_ttests": {
+    "forest": [
+      28.0,
+      45.0,
+      75.0,
+      90.0
+    ],
+    "swamp_marsh": [
+      47.0,
+      61.0,
+      73.0,
+      87.0
+    ],
+    "rough_uneven": [
+      29.0,
+      46.0,
+      64.0,
+      92.0
+    ],
+    "wet_uneven_proxy": [
+      32.0,
+      84.0,
+      100.0,
+      115.0
+    ]
+  },
+  "requested_anchor_gaps_s": [
+    4.0,
+    7.0,
+    9.0,
+    10.0
+  ],
+  "definition": "gap = ttest - latest gradient-training INPUT anchor. No training or validation/model-selection data after that cutoff.",
+  "local_epochs": 5,
+  "lr_local": 6e-05
+}

@@ -1,0 +1,59 @@
+model:
+  world_d_model: 800
+  world_heads: 10
+  world_layers: 8
+  world_ffn_ratio: 7
+  use_leg_pretransformers: true
+  leg_pre_d_model: 384
+  leg_pre_heads: 8
+  leg_pre_layers: 4
+  leg_pre_ffn_ratio: 4
+  leg_pre_residual_scale: 0.1
+
+train:
+  train_manifest: /path/to/ugp/merged_feelwm_v7_runs/tartanground_k1_k5_leg_compare/prepared/train_k5.jsonl
+  val_manifest: /path/to/ugp/merged_feelwm_v7_runs/tartanground_k1_k5_leg_compare/prepared/dev_k5.jsonl
+  output_dir: /path/to/ugp/merged_feelwm_v7_runs/tartanground_k1_k5_leg_compare_10ep_test10/v7f_force_finetune
+  indexed_data: true
+  init_weights_only: /path/to/ugp/merged_feelwm_v7_runs/tartanground_k1_k5_leg_compare_10ep_test10/v7f_force_finetune/init_selected.pt
+  trainable_prefixes: [v7f]
+  checkpoint_metric: force_score
+  best_checkpoint_name: best_force.pt
+  validation_max_batches: null
+  teacher_forcing: true
+  teacher_forcing_start_probability: 0.5
+  teacher_forcing_end_probability: 0.0
+  horizon_lambdas: [0.2, 0.2, 0.2, 0.2, 0.2]
+  seed: 781
+  epochs: 7
+  max_steps: null
+  batch_size: 1
+  grad_accum_steps: 8
+  num_workers: 0
+  pin_memory: true
+  persistent_workers: false
+  lr: 0.00005
+  min_lr_ratio: 0.05
+  weight_decay: 0.01
+  warmup_steps: 100
+  grad_clip: 1.0
+  amp_dtype: bf16
+  tf32: true
+  compile: false
+  log_every: 10
+  val_every_steps: 3513
+  checkpoint_every_steps: 500
+  keep_last_checkpoints: 2
+  resume: auto
+  history_shift_samples: 10
+
+  w_dino: 0.0
+  w_conv: 0.0
+  w_geom: 0.0
+  w_flow: 0.0
+  w_contact: 0.0
+  w_load: 0.0
+  w_jointbody: 0.0
+  w_tau: 0.0
+  w_base_force: 0.0
+  w_v7f_force: 1.0

@@ -1,0 +1,136 @@
+\section{Persistent Global Map and Topological Route Planning}
+\label{sec:global}
+
+\subsection{Why the local twin is not sufficient}
+
+The local physical twin answers \emph{how safely can the robot execute a step or short motion on the terrain currently visible?} It does not by itself answer \emph{which side of a large concave obstacle ultimately reaches the goal?} A robot-centric local planner can be attracted toward a goal through the closed side of a U-shaped barrier, repeatedly turn away from the nearby wall, and remain trapped because leaving the U initially requires motion away from the goal.
+
+TOP-Nav similarly maintains robot-centric goal, terrain, obstacle, and proprioception costmaps and selects a waypoint on the edge of the local map \citep{ren2024topnav}. This is effective for reactive navigation, but a persistent world-frame map and topological route search are required when the complete obstacle arrangement is larger than the local window. The added global layer is standard navigation infrastructure rather than the proposed scientific novelty; the novelty remains the visually indexed contact-response field and its physical composition.
+
+\begin{claimbox}[Necessary distinction]
+\textbf{Persistent global map and global graph search: necessary} for reliable point-goal navigation around U-shaped/cul-de-sac obstacles.\\
+\textbf{Neural global time field: not necessary.} It is an optional continuous cost-to-go representation that may accelerate repeated queries or couple risk speed to an Eikonal/Hamilton--Jacobi equation after the core system works.
+\end{claimbox}
+
+\subsection{Hierarchical architecture}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[node distance=8mm and 12mm]
+  \node[block,text width=36mm] (sense) {RGB-D, odometry/SLAM, proprioception};
+  \node[block,right=of sense,text width=37mm] (local) {Registered local twin\\occupancy, geometry, contact posterior};
+  \node[physics,right=of local,text width=38mm] (global) {Persistent world map\\$\mathcal G_t(x,y)$ and uncertainty};
+  \node[decision,below=of global,text width=38mm] (route) {Global A*/D* Lite\\route and look-ahead subgoal};
+  \node[decision,left=of route,text width=37mm] (mppi) {Local physics-aware MPPI\\safe command sequence};
+  \node[block,left=of mppi,text width=36mm] (robot) {Quadruped and fixed low-level controller};
+  \draw[arrow] (sense) -- (local);
+  \draw[arrow] (local) -- (global);
+  \draw[arrow] (global) -- (route);
+  \draw[arrow] (route) -- (mppi);
+  \draw[arrow] (mppi) -- (robot);
+  \draw[feedback] (robot) -- (sense);
+\end{tikzpicture}
+\caption{Global--local hierarchy. The global planner resolves obstacle topology and supplies a subgoal; the local twin and MPPI determine whether and how that subgoal can be reached safely under uncertain foot--terrain physics.}
+\label{fig:global_hierarchy}
+\end{figure}
+
+The global planner never commands joints. It produces a route $P_t^*$ and selects a look-ahead point $p_t^{\mathrm{sub}}$ where the route intersects the local planning horizon. MPPI then searches velocity commands that move toward $p_t^{\mathrm{sub}}$ while respecting contact, stability, and collision constraints. Thus the two questions are separated:
+\begin{equation}
+\underbrace{\mathcal G_t,p_{\mathrm{goal}}\longmapsto P_t^*,p_t^{\mathrm{sub}}}_{\text{where to go globally}},
+\qquad
+\underbrace{\M_t,x_t,p_t^{\mathrm{sub}}\longmapsto u_t}_{\text{how to move safely locally}}.
+\label{eq:global_local_interface}
+\end{equation}
+
+\subsection{Persistent world-frame map}
+
+Every local depth point and terrain cell is transformed to the common world frame using \cref{eq:backproject}. The persistent grid stores
+\begin{equation}
+\mathcal G_t(\xi)=\left\{
+L_{\xi,t}^{\mathrm{occ}},h_\xi,n_\xi,z_\xi,
+\mu_{\eta,\xi},\Sigma_{\eta,\xi},\ell_\xi,s_{\xi,t},
+o_{\xi,t},t_{\mathrm{last}}
+\right\},
+\label{eq:global_map}
+\end{equation}
+where $L^{\mathrm{occ}}$ is occupancy log-odds and $o\in\{\text{observed},\text{unknown}\}$. Vertical concrete, rocks, trees, and base-height collisions belong to the occupancy layer. Ground appearance, elevation, slope, and learned contact risk belong to the traversability/physical layer. These must not be conflated: the contact model is not asked to discover that a wall is impassable.
+
+For inverse sensor model probability $p(m_\xi\mid z_t,x_t)$, occupancy is updated by
+\begin{equation}
+L_{\xi,t}^{\mathrm{occ}}=L_{\xi,t-1}^{\mathrm{occ}}
++\operatorname{logit}\!\left[p(m_\xi\mid z_t,x_t)\right]-L_0,
+\label{eq:occupancy_update}
+\end{equation}
+with clamping and pose-uncertainty inflation. Visual features use view-weighted averaging; geometry uses TSDF/height fusion; contact posteriors use \cref{eq:gaussian_fusion}. Cells remain uncertain when observation angle, localization, or physical evidence is weak. A rolling high-resolution local grid may coexist with a coarser persistent global grid of approximately 5--15 cm cells.
+
+\subsection{Global risk cost and route search}
+
+For a global state cell $\xi$ and heading bin $\psi$, define
+\begin{align}
+c_G(\xi,\psi)=&\ w_o c_{\mathrm{occ}}(\xi)
++w_r\E[R_{\mathrm{terrain}}(\xi,\psi)]
++w_\sigma\sqrt{\V[R_{\mathrm{terrain}}(\xi,\psi)]}\\
+&+w_hc_{\mathrm{slope/height}}(\xi,\psi)
++w_u\mathbf 1_{\mathrm{unknown}}(\xi),
+\label{eq:global_cost}
+\end{align}
+where $c_{\mathrm{occ}}=\infty$ for inflated occupied cells. The expected risk may initially be a conservative scalar derived from local rollouts; heading dependence is retained whenever slope direction or anisotropic slip matters. The route is
+\begin{equation}
+P_t^*=\arg\min_{P:\,x_t\leadsto p_{\mathrm{goal}}}
+\sum_{k\in P}\left[c_G(\xi_k,\psi_k)+
+\lambda_\psi d(\psi_{k+1},\psi_k)^2\right].
+\label{eq:global_path}
+\end{equation}
+
+A* is the simplest known-map baseline. D* Lite is the preferred online implementation because newly observed walls or changed risk update only affected route costs rather than forcing an entirely new search. If the U is not yet fully observed, the robot treats unseen cells with a configurable uncertainty penalty, moves only toward a safe route/frontier, fuses new geometry, and replans. No planner can route around completely unseen geometry without exploration or a prior map.
+
+\subsection{How the U-shaped concrete case is resolved}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[scale=0.95]
+  \draw[line width=5pt,draw=muted] (0,0) -- (0,3.1) -- (2.2,3.1) -- (2.2,0);
+  \node[circle,fill=blue,inner sep=3.2pt,label=left:{robot}] (r) at (1.1,1.85) {};
+  \node[star,star points=5,fill=orange,draw=orange,minimum size=7mm,label=right:{goal}] (g) at (1.1,4.25) {};
+  \draw[red,dashed,-{Latex[length=2mm]},thick] (r) -- node[left,font=\small]{local goal pull} (1.1,3.0);
+  \draw[teal,-{Latex[length=2.2mm]},very thick,rounded corners]
+    (r) -- (1.1,-0.55) -- (2.85,-0.55) -- (2.85,3.75) -- (1.55,4.25) -- (g);
+  \node[align=left,font=\small,text=teal] at (4.25,1.85) {persistent-map route:\\exit, go around,\\then approach goal};
+  \draw[arrow] (3.45,1.7) -- (2.85,1.7);
+\end{tikzpicture}
+\caption{U-shaped obstacle benchmark. A local goal attraction points into the closed wall. Persistent mapping plus A*/D* finds a temporarily goal-opposing route through the opening and around the obstacle. The local physical planner evaluates the safety of the ground along that route.}
+\label{fig:u_shape}
+\end{figure}
+
+The benchmark will include mapped and incrementally revealed U-shaped/cul-de-sac layouts. Reported quantities are escape success, collision/stall rate, time to first valid detour, replanning count, path-length ratio to the known-map optimum, and physical-risk cost. The required comparison is local greedy/TOP-Nav-style edge waypoint selection versus persistent A* and D* Lite, all using the same local obstacle and terrain estimates.
+
+\subsection{Is a global time field necessary?}
+
+No. A global \emph{map} is necessary for topological memory; a global \emph{time field} is one possible route representation on that map. Given a risk-adjusted progress speed $S_{\mathrm{risk}}(x)$, the arrival-time field satisfies
+\begin{equation}
+S_{\mathrm{risk}}(x)=\max\{\epsilon,\E[v_{\mathrm{progress}}(x)]-\beta\sqrt{\V[v_{\mathrm{progress}}(x)]}\},
+\qquad
+\lVert\nabla T(x)\rVert=\frac{1}{S_{\mathrm{risk}}(x)}.
+\label{eq:eikonal}
+\end{equation}
+Following $-\nabla T$ produces a continuous route to the goal, and a learned NTFields representation may answer many start--goal cost queries quickly without expert paths \citep{ni2023ntfields,liu2025active}. This is the motivation for retaining it as a stretch module. It was not required by the original contact-response idea and should not be made a dependency of its success.
+
+\begin{table}[ht]
+\centering
+\caption{Role of the global planning alternatives.}
+\label{tab:global_planners}
+\small
+\begin{tabularx}{\textwidth}{@{}L{29mm}Y Y@{}}
+\toprule
+\textbf{Planner} & \textbf{Why use it} & \textbf{Decision for this UGP}\\
+\midrule
+A* & Transparent discrete optimum on a known static grid; directly solves the U-shape topology & Required baseline\\
+D* Lite & Efficient replanning when newly observed occupancy/risk changes & Core global planner\\
+Fast Marching / Eikonal & Smooth continuous arrival-time field for isotropic speed/cost & Optional comparison\\
+NTFields / Active NTFields & Amortized differentiable arrival-time prediction; potential repeated-query speedup & Stretch only, after map/contact validation\\
+$SE(2)$ graph or anisotropic HJ & Correct when risk depends strongly on heading, gait, or slope direction & Use directional graph if needed; neural HJ is future work\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+An ordinary scalar 2-D time field cannot faithfully represent strongly heading-dependent quadruped risk. The safe core is therefore a directional A*/D* graph when anisotropy matters. Neural time fields are evaluated only if they improve runtime or path quality over this transparent baseline without weakening safety or interpretability.

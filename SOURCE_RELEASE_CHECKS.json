@@ -1,0 +1,16 @@
+{
+  "snapshot_date": "2026-10-23",
+  "unique_source_configuration_document_files": 981,
+  "notebook_variants": 137,
+  "python_inspection_exports": 137,
+  "python_source_modules_syntax_checked": 549,
+  "schema_valid_notebooks_in_repository": 140,
+  "source_hash_mismatches": 0,
+  "sensitive_pattern_findings": 0,
+  "cs781_source_files_in_expanded_release": 0,
+  "curated_document_broken_links": 0,
+  "python_source_syntax_failures": 0,
+  "python_inspection_export_syntax_failures": 0,
+  "feelwm_synthetic_smoke_test": "passed on CPU",
+  "limitations": "Structural publication checks and a synthetic smoke test do not establish reproduction of training or research scores. Historical notebooks retain their original code and saved execution/error counts. Some prose-only notebook code cells and IPython commands are comments in inspection exports. Live RTX host was unreachable."
+}

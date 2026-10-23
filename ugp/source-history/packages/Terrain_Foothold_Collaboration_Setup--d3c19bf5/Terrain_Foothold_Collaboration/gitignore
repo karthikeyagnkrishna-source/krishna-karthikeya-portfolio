@@ -1,0 +1,10 @@
+.collab_runs/
+__pycache__/
+*.pyc
+runs/
+checkpoints/
+*.pt
+*.pth
+.env
+.venv/
+*.npz

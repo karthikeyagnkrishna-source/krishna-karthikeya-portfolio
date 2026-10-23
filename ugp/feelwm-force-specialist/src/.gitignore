@@ -1,0 +1,16 @@
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.coverage
+.mypy_cache/
+.ruff_cache/
+.venv/
+data/
+dummy_data/
+runs/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.log
+.superpowers/

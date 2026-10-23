@@ -1,0 +1,66 @@
+{
+  "evidence": "REPLACE_WITH_AUDITABLE_REFERENCE",
+  "force_direction": "environment_on_robot",
+  "per_leg": {
+    "FL": {
+      "axis_permutation": [
+        0,
+        1,
+        2
+      ],
+      "axis_sign": [
+        1,
+        1,
+        1
+      ],
+      "source_frame": "UNRESOLVED",
+      "static_test_passed": false
+    },
+    "FR": {
+      "axis_permutation": [
+        0,
+        1,
+        2
+      ],
+      "axis_sign": [
+        1,
+        1,
+        1
+      ],
+      "source_frame": "UNRESOLVED",
+      "static_test_passed": false
+    },
+    "RL": {
+      "axis_permutation": [
+        0,
+        1,
+        2
+      ],
+      "axis_sign": [
+        1,
+        1,
+        1
+      ],
+      "source_frame": "UNRESOLVED",
+      "static_test_passed": false
+    },
+    "RR": {
+      "axis_permutation": [
+        0,
+        1,
+        2
+      ],
+      "axis_sign": [
+        1,
+        1,
+        1
+      ],
+      "source_frame": "UNRESOLVED",
+      "static_test_passed": false
+    }
+  },
+  "schema": "V10R_FORCE_FRAME_CONTRACT_V1",
+  "verification_method": "publisher/source-code statement AND static known-load/sign test",
+  "verified": false,
+  "verified_before_split": false
+}

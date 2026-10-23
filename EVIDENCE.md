@@ -23,4 +23,8 @@
 3. Complete all four matched FeelWM ten-epoch evaluations.
 4. Resolve the foothold model's low event coverage and missing rear-leg scored touchdowns.
 5. Obtain independent test and reconstruction benchmarks for the separate 3D model.
-6. Confirm publication rights for shared source, data, and course solutions before expanding this public copy.
+6. Keep CS781 solution code private and obtain separate data/model distribution rights before adding datasets or learned weights.
+
+## Expanded source release
+
+The [source manifest](ugp/source-history/SOURCE_MANIFEST.json) supplements the original aggregate-results provenance. It records all released UGP project trees, notebook variants, source-package members, aliases, original hashes and publication hashes. Original notebook state is historical evidence only. Source publishing does not change the training/evaluation status of an experiment.

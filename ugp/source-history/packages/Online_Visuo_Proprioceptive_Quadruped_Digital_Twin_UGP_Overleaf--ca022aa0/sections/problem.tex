@@ -1,0 +1,142 @@
+\section{Problem Definition and Research Positioning}
+\label{sec:problem}
+
+\subsection{The gap}
+
+A quadruped approaching an untouched patch of ground must answer a counterfactual question: \emph{what will happen to the body if a particular foot lands here under a particular gait and command?} A semantic label such as ``grass'' is insufficient. Visually similar grass can be dry or waterlogged; visually different surfaces can have the same mechanical response. Conversely, a single scalar ``traversability'' score cannot distinguish between lateral slip, vertical collapse, impact, actuator saturation, or a transient loss of velocity tracking.
+
+Perception-conditioned forward models already predict platform motion or failure directly from exteroception, proprioceptive history, and candidate actions \citep{roth2025perceptive,kim2022forward}. Vision-to-physics systems infer simulator parameters such as friction and stiffness \citep{chen2024terrain}, while uncertainty-aware traversability estimators improve behavior on out-of-distribution terrain \citep{cai2024pietra,ren2024topnav,zhang2024traversability}. Real-to-sim methods align visual reconstruction and collision geometry \citep{chen2026quadverse,escontrela2025gaussgym,han2025re3sim}, and neural time fields solve Eikonal-style planning problems \citep{ni2023ntfields,liu2025active}. Each ingredient is useful, but their combination leaves an important missing link:
+
+\begin{claimbox}[Research gap]
+Existing work does not yet provide a compact, experimentally identified \textbf{local foot--terrain law} that is (i) indexed by registered visual and geometric evidence, (ii) conditioned on the actual contact state and loading, (iii) composable across four feet through explicit multibody mechanics, (iv) updated online after contact, and (v) validated against real force and motion rather than treated as a simulator label.
+\end{claimbox}
+
+The original intuition ``change in visual feature $\Delta z$ maps to change in proprioception $\Delta p$'' is therefore refined. That direct mapping is generally ill-posed because the response also depends on the robot state, action, contact mode, geometry, and history. The proposed causal chain is
+\begin{equation}
+\underbrace{(z_\xi,g_\xi)}_{\text{pre-contact evidence}}
+\longrightarrow
+\underbrace{q(\eta_\xi,\ell_\xi)}_{\text{contact-law posterior}}
+\xrightarrow[\text{action }U]{\text{four-leg dynamics}}
+\underbrace{q(X_{t+1:t+H},R_{t+1:t+H})}_{\text{response and risk}},
+\label{eq:causal_chain}
+\end{equation}
+where $\xi$ is a terrain cell, $z_\xi$ a visual embedding, $g_\xi$ local geometry, $\eta_\xi$ interpretable effective parameters, $\ell_\xi$ a residual latent variable, $U$ a candidate command sequence, and $R$ a set of risk observables.
+
+\subsection{Research question, hypotheses, and contribution}
+
+\begin{keybox}[Primary research question]
+Can local foot--terrain interaction laws learned from controlled single-leg trials be composed through floating-base multi-contact dynamics to predict full-body quadruped response on visually observed but untouched terrain, using sparse real interactions and calibrated uncertainty?
+\end{keybox}
+
+The proposal tests four linked hypotheses.
+
+\begin{table}[ht]
+\centering
+\caption{Falsifiable hypotheses. Targets are pre-registration goals and will be adjusted only if the measured sensor noise floor makes them physically unattainable.}
+\label{tab:hypotheses}
+\begin{tabularx}{\textwidth}{@{}C{9mm}Y Y@{}}
+\toprule
+ & \textbf{Hypothesis} & \textbf{Evidence required}\\
+\midrule
+H1 & A physics-guided residual contact model predicts held-out three-axis contact force and impulse better than a uniform analytical contact model. & Held-out terrain/condition force NRMSE, impulse error, slip-onset classification, and calibrated intervals.\\
+H2 & Four shared copies of the single-leg law, coupled through multibody dynamics, improve short-horizon body-response prediction without retraining an unconstrained whole-robot model. & Base velocity/orientation, joint state, contact timing, and rollout error under unseen load distributions and gaits.\\
+H3 & A visual--geometric prior can predict the post-contact physical posterior before touch, while correctly increasing uncertainty for ambiguous or out-of-distribution appearance. & Leave-one-terrain-family-out NLL, interval coverage, risk calibration, and adaptation curves after one to five contacts.\\
+H4 & Uncertainty-aware rollouts reduce slip, instability, and failed traversal relative to deterministic or visual-only baselines at comparable progress. & Success, fall/stall rate, slip distance, CVaR cost, time, and energy over repeated trials.\\
+H5 & Persistent world-frame mapping plus incremental global route search avoids concave-obstacle local minima that trap robot-centric greedy waypoint selection. & U-shape/cul-de-sac escape success, collision/stall rate, replanning latency, and path ratio to a known-map optimum.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The intended contribution is a \emph{method and validation protocol}, not merely a larger network:
+\begin{enumerate}
+  \item a constrained three-dimensional contact law with a recurrent terrain state and a small learned residual;
+  \item a disciplined single-leg-to-four-leg composition procedure that separates actuator error from terrain error;
+  \item a registered visual--geometric--physical terrain field and a cross-modal teacher--student model for pre-contact inference;
+  \item an online low-dimensional posterior update with explicit uncertainty and a hierarchical interface to persistent global mapping, D* Lite route search, and local risk-aware planning; and
+  \item a dataset, contact and U-shape benchmarks, baselines, ablations, and acceptance gates that make each claim falsifiable.
+\end{enumerate}
+
+\subsection{What is novel, reused, and deliberately out of scope}
+
+\begin{table}[ht]
+\centering
+\caption{Positioning against the closest methodological families.}
+\label{tab:positioning}
+\small
+\begin{tabularx}{\textwidth}{@{}L{31mm}Y Y@{}}
+\toprule
+\textbf{Family} & \textbf{What is reused} & \textbf{What this proposal adds}\\
+\midrule
+Perceptive forward dynamics \citep{roth2025perceptive,kim2022forward} & Action-conditioned rollout prediction and sampling-based local planning. & A per-foot contact interface constrained by force mechanics, enabling composition, local correction, and physical diagnosis.\\
+Vision-to-physics \citep{chen2024terrain} & Cross-modal visual prediction of effective simulator quantities. & Real force supervision, recurrent/deformable state, posterior rather than point estimate, and explicit distinction between effective parameters and material truth.\\
+Evidential traversability \citep{cai2024pietra,ren2024topnav} & OOD-aware risk and proprioceptive correction. & Correction of a spatial contact-law posterior that is rolled through full-body dynamics, rather than correction of a terrain class or scalar score.\\
+Visual--physical real-to-sim \citep{chen2026quadverse,escontrela2025gaussgym,han2025re3sim} & Registered neural rendering and collision geometry; residual dynamics calibration. & A spatially varying, contact-conditioned, online-updated physical field learned from controlled real interaction.\\
+Digital double \citep{haddeler2022digital} & Real-time comparison between predicted and measured response. & Pre-contact visual priors, per-foot force-level correction, and uncertainty-propagated action selection.\\
+Neural Eikonal planning \citep{ni2023ntfields,liu2025active} & Arrival-time fields as a possible global planner. & Risk speed derived from the learned contact response; anisotropy is treated explicitly. This remains a stretch module.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{warningbox}[Claims this project will not make]
+The inferred $\eta$ values are \textbf{effective simulator/contact parameters}, not guaranteed intrinsic material constants. A photorealistic rendering is not evidence of physical fidelity. Single-leg validation alone does not prove whole-quadruped real-world fidelity. The project does not learn the robot's entire dynamics end-to-end, replace the low-level locomotion controller, or promise general operation on arbitrary mud without reproducible training and validation conditions.
+\end{warningbox}
+
+\subsection{System overview}
+
+\Cref{fig:pipeline} shows the contact-response and local-control loop. The persistent global mapping and route-selection layer is specified separately in \cref{fig:global_hierarchy}. Four separations are fundamental: (i) visual prediction is separated from real post-contact evidence; (ii) contact physics is separated from actuator dynamics; (iii) photorealistic rendering is separated from collision geometry while both remain registered; and (iv) global topological route selection is separated from local physical action selection.
+
+\begin{figure}[p]
+\centering
+\begin{tikzpicture}[node distance=7mm and 10mm]
+  \node[block,text width=38mm] (sense) {\textbf{Real robot at $t$}\\RGB/RGB-D, joint state, IMU, previous actions};
+  \node[block,text width=38mm,below=of sense] (map) {\textbf{Registered local map}\\appearance $z_\xi$, geometry $g_\xi$, pose and uncertainty};
+  \node[physics,text width=41mm,below=of map] (prior) {\textbf{Pre-contact posterior}\\$q_v(\eta_\xi,\ell_\xi\mid z_\xi,g_\xi)$};
+
+  \node[physics,text width=41mm,right=18mm of prior] (contacts) {\textbf{Shared contact law}\\four foot queries $f_i=f_\theta(z_\xi,g_\xi,\chi_i,s_\xi)$};
+  \node[physics,text width=41mm,below=of contacts] (dynamics) {\textbf{Coupled body dynamics}\\$M\dot\nu+h=S^\top\tau+\sum_iJ_i^\top f_i$};
+  \node[decision,text width=41mm,below=of dynamics] (rollout) {\textbf{Uncertainty-sampled rollouts}\\candidate commands, state and risk};
+  \node[decision,text width=41mm,below=of rollout] (mppi) {\textbf{Risk-aware MPPI}\\select and execute first command};
+
+  \node[block,text width=39mm,left=18mm of mppi] (evidence) {\textbf{Reality after touch}\\measured force/motion, residual and contact history};
+  \node[physics,text width=39mm,above=of evidence] (update) {\textbf{Local update}\\Bayesian fusion plus sparse residual memory};
+
+  \draw[arrow] (sense) -- (map);
+  \draw[arrow] (map) -- (prior);
+  \draw[arrow] (prior) -- (contacts);
+  \draw[arrow] (contacts) -- (dynamics);
+  \draw[arrow] (dynamics) -- (rollout);
+  \draw[arrow] (rollout) -- (mppi);
+  \draw[arrow] (mppi) -- (evidence);
+  \draw[feedback] (evidence) -- (update);
+  \draw[feedback] (update) -- (prior);
+  \draw[feedback] (mppi.east) -- ++(13mm,0) |- (sense.east);
+\end{tikzpicture}
+\caption{Contact-response and local-control loop. Untouched terrain is represented by a visual--geometric prior. Candidate actions are evaluated only after the per-foot laws are coupled through mechanics. Real post-contact evidence updates the local field; persistent global route selection is shown in \cref{fig:global_hierarchy}.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Notation and operational assumptions}
+
+\begin{table}[ht]
+\centering
+\caption{Core notation.}
+\label{tab:notation}
+\small
+\begin{tabularx}{\textwidth}{@{}L{20mm}Y L{22mm}Y@{}}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Symbol} & \textbf{Meaning}\\
+\midrule
+$q,\nu$ & Floating-base configuration and generalized velocity & $x=[q,\nu]$ & Full robot state\\
+$i\in\{1,\ldots,4\}$ & Foot index & $\xi$ & Terrain cell/patch under a foot\\
+$z_\xi$ & Dense visual embedding & $g_\xi$ & Geometry: height, normal, curvature, roughness\\
+$\eta_\xi$ & Positive effective contact parameters & $\ell_\xi$ & Low-dimensional residual contact latent\\
+$s_{\xi,t}$ & Recurrent/deformable terrain state & $\chi_{i,t}$ & Foot pose, velocity, penetration, command/load context\\
+$f_i\in\R^3$ & Ground-reaction force at foot $i$ & $\tau$ & Actuator torque applied through $S$\\
+$U$ & Candidate command sequence & $H$ & Prediction horizon\\
+$\mu_\xi,\Sigma_\xi$ & Contact posterior mean/covariance & $R$ & Risk observables: slip, tilt, sinkage, collision\\
+$\mathcal G_t$ & Persistent world-frame occupancy/physical map & $P_t^*,p_t^{\mathrm{sub}}$ & Global route and current look-ahead subgoal\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The core implementation assumes access to a controlled one-legged rig or simulator, synchronized vision and proprioception, and terrain samples supplied in small reproducible patches. A six-axis foot force/torque sensor or force plate is strongly preferred. The full quadruped is used sparingly for safe validation; the method remains valuable if only simulated four-leg validation is available, but the claims will be correspondingly narrower.

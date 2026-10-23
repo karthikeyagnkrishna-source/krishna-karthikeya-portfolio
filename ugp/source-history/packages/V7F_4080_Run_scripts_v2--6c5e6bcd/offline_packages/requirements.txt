@@ -1,0 +1,2 @@
+# Add the exact Linux wheel versions to this file after the offline bundle is acquired.
+# setup_offline.py will install only from wheelhouse/ and will never reach PyPI.

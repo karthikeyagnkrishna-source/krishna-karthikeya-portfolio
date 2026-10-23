@@ -131,22 +131,22 @@
       "published": "ugp/v7-v7f/notebooks/v7_v7f_research_snapshot.ipynb",
       "source_artifact": "V7F_2xRTX4080_EXPANDED_28TRAIN_4STRICT_HOLDOUT_CHECKPOINTED_FINAL.ipynb",
       "source_sha256": "a8dfe1a289fd910cdd46f3fef4dfccb12fee5c27434e41d22a63c39ba35f87fe",
-      "published_sha256": "cfca3e4ffff4deb991a2eaa11a31012c2daf5c4535f8921e3f6ba6efc90d6577",
-      "transform": "outputs and execution state removed; local/RTX identifiers redacted"
+      "published_sha256": "4d6443b3bf14282d7c844d500cba52ada0fc6c368757a7edacef12148407471c",
+      "transform": "outputs and execution state removed; local/RTX identifiers redacted; notebook schema normalized"
     },
     {
       "published": "ugp/foothold-memory/notebooks/v7_short_foothold_memory.ipynb",
       "source_artifact": "V7F_2xRTX4080_EXPANDED_28TRAIN_4STRICT_HOLDOUT_SHORT_FOOTHOLD_MEMORY.ipynb",
       "source_sha256": "f6a0085e399a2ef66a51bfedb1ca590c19f8b5c229d78c7cbfd9d0ec3da1ffc6",
-      "published_sha256": "c18073738ea457de3415193caf4d33537aa6346407c1152bec3acd1b0c3aff31",
-      "transform": "outputs and execution state removed; local/RTX identifiers redacted"
+      "published_sha256": "80727e994127aa4d4e37b112b9f0c5e1b6a8be96890ddffb7c40915b498107f4",
+      "transform": "outputs and execution state removed; local/RTX identifiers redacted; notebook schema normalized"
     },
     {
       "published": "ugp/v8-contact-map/notebooks/v8_standalone_colab_snapshot.ipynb",
       "source_artifact": "V8_CONTACTMAP_STANDALONE_FRESH_COLAB_(1) (3).ipynb",
       "source_sha256": "5d9c24f20b5dbe76eff9a2b4b25b678594622ab0d29ad47bd83334e90758c65b",
-      "published_sha256": "207513ff6f4221c8de12c3caa4dff66df8c6d5930b58622fb737d126389fdb0a",
-      "transform": "outputs and execution state removed; local/RTX identifiers redacted"
+      "published_sha256": "bec11068084e1070cacdcc2c65e2978eb8629e5e649432354641e137846db9f8",
+      "transform": "outputs and execution state removed; local/RTX identifiers redacted; notebook schema normalized"
     },
     {
       "published": "ugp/v7-v7f/figures/v7_architecture.png",
@@ -260,5 +260,6 @@
       "published_sha256": "d41d25be9b522ec9c41e1a6ba3f3aa0d9dbdf8e7c0ee5b9a264fa7b45fe9e8a9",
       "transform": "plot generated from audited unique-event counts"
     }
-  ]
+  ],
+  "expanded_source_manifest": "ugp/source-history/SOURCE_MANIFEST.json"
 }

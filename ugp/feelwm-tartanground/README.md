@@ -12,4 +12,4 @@ The historical ten-epoch continuation had three saved epoch-10 components and on
 
 ## Running the source
 
-Use Python 3.10+ with `pip install -r src/requirements.txt`. From `src/`, run `python smoke_test.py` for a synthetic shape/backward check. Real training requires a JSONL manifest of preprocessed tensor shards and pretrained visual features as documented in the source. The distributed snapshot excludes local launch configurations, raw recordings, and weights. The smoke test does not verify published research scores.
+Use Python 3.10+ with `pip install -r src/requirements.txt`. From `src/`, run `python smoke_test.py` for a synthetic shape/backward check. Real training requires a JSONL manifest of preprocessed tensor shards and pretrained visual features as documented in the source. The complete source now includes launch configurations, supporting scripts and tests with private paths replaced by portable placeholders. Raw recordings and learned weights are excluded. The smoke test does not verify published research scores.

@@ -1,0 +1,81 @@
+model:
+  # Exact requested capacity.
+  world_d_model: 800
+  world_heads: 10
+  world_layers: 8
+  world_ffn_ratio: 7
+
+  hist_d_model: 128
+  hist_heads: 4
+  hist_layers: 2
+  hist_ffn_ratio: 4
+
+  query_dim: 256
+  query_heads: 8
+  query_layers: 4
+  query_ffn_ratio: 4
+
+  v7f_dim: 256
+  v7f_heads: 8
+  v7f_layers: 2
+  v7f_experts: 4
+  dropout: 0.10
+
+train:
+  train_manifest: /ABSOLUTE/PATH/TO/train_manifest.jsonl
+  val_manifest: /ABSOLUTE/PATH/TO/val_manifest.jsonl
+  output_dir: /path/to/ugp/merged_feelwm_v7_runs/training
+
+  seed: 781
+  epochs: 30
+
+  # Conservative starting point for 2 x RTX 4080. Increase after measuring VRAM.
+  batch_size: 1
+  grad_accum_steps: 8
+  num_workers: 6
+  prefetch_factor: 2
+  pin_memory: true
+  persistent_workers: true
+
+  lr: 0.0002
+  min_lr_ratio: 0.05
+  weight_decay: 0.05
+  warmup_steps: 1000
+  grad_clip: 1.0
+
+  amp_dtype: bf16
+  tf32: true
+  compile: false
+
+  log_every: 10
+  val_every_steps: 1000
+  checkpoint_every_steps: 250
+  keep_last_checkpoints: 4
+  resume: auto
+
+  # IMPORTANT: set this to match your prepared history cadence.
+  # 1  -> histories already downsampled to one sample per world-model step.
+  # 10 -> 100 Hz histories with 0.1 s world-model steps.
+  history_shift_samples: 10
+
+  w_dino: 1.0
+  w_conv: 1.0
+  w_geom: 1.0
+  w_flow: 1.0
+  w_contact: 0.5
+  w_load: 0.25
+  w_jointbody: 1.0
+  w_tau: 1.0
+  w_base_force: 1.0
+  w_v7f_force: 1.0
+
+  v7f_w_vec: 2.0
+  v7f_w_mag: 1.6
+  v7f_w_dir: 0.1
+  v7f_w_phase: 0.25
+  v7f_w_temp: 0.45
+  v7f_w_impulse: 0.35
+  v7f_w_anchor: 0.015
+  v7f_w_gate: 0.005
+  force_contact_threshold: 20.0
+  rollout_dt: 0.1
